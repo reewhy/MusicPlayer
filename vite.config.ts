@@ -11,6 +11,26 @@ export default defineConfig({
     vue(),
     legacy()
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://dab.yeet.su',
+        changeOrigin: true,
+        secure: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req) =>{
+            console.log('Sending request to the target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('Received response from the target:', proxyRes.statusCode, req.url);
+          });
+        }
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
