@@ -1,0 +1,7 @@
+{
+  "name": "MediaPlayer",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
