@@ -54,6 +54,7 @@ export interface Album {
     label?: string;
     genreId?: number;
     images?: Images;
+    tracks?: Song[];
 }
 
 export interface AlbumsResponse {

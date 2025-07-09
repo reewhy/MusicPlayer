@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useDabManager } from "@/composables/useDabManager"
+import SongItem from "@/components/SongItem.vue";
+import AlbumItem from "@/components/AlbumItem.vue";
 
 const { searchAlbums, searchTracks } = useDabManager()
 
@@ -38,159 +40,70 @@ const search = async () => {
   }
 }
 </script>
-
 <template>
-  <main>
-    <form @submit.prevent="search">
-      <div class="form-group">
+  <main class="max-w-3xl mx-auto p-5">
+    <form @submit.prevent="search" class="flex flex-wrap md:flex-nowrap gap-3 mb-5 items-end">
+      <div class="flex flex-col flex-grow">
         <input
             v-model="title"
             type="text"
             placeholder="Title"
             :disabled="isLoading"
             required
+            class="px-3 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
         />
       </div>
 
-      <div class="form-group">
-        <select v-model="type" :disabled="isLoading">
+      <div class="flex flex-col">
+        <select
+            v-model="type"
+            :disabled="isLoading"
+            class="px-3 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
+        >
           <option value="track">Track</option>
           <option value="album">Album</option>
         </select>
       </div>
 
-      <button type="submit" :disabled="isLoading || !title.trim()">
+      <button
+          type="submit"
+          :disabled="isLoading || !title.trim()"
+          class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      >
         {{ isLoading ? 'Searching...' : 'Search' }}
       </button>
     </form>
 
-    <!-- Error message -->
-    <div v-if="error" class="error">
+    <div v-if="error" class="text-red-700 bg-red-100 border border-red-300 px-4 py-3 rounded mb-5">
       {{ error }}
     </div>
 
-    <!-- Search results -->
-    <div v-if="searchResults.length > 0" class="results">
-      <h3>Results ({{ searchResults.length }})</h3>
-      <div class="results-grid">
-        <div
-            v-for="(result, index) in searchResults"
-            :key="result.id || index"
-            class="result-item"
+    <div v-if="searchResults.length > 0" class="mt-5">
+      <h3 class="mb-4 text-lg font-semibold text-gray-200">
+        Results ({{ searchResults.length }})
+      </h3>
+      <div >
+        <span
+            v-if="type === 'track'"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
         >
-          <h4>{{ result.title }}</h4>
-          <p>{{ result.artist }}</p>
-          <p v-if="type === 'album'">{{ result.trackCount }} tracks</p>
-          <p v-if="type === 'track'">{{ result.albumTitle }}</p>
-        </div>
+          <SongItem
+              v-for="(result, index) in searchResults"
+              :key="result.id || index"
+              :result="result"
+          ></SongItem>
+        </span>
+        <span
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+            v-else
+        >
+          <AlbumItem
+              v-for="(result, index) in searchResults"
+              :key="result.id || index"
+              :result="result"
+          ></AlbumItem>
+        </span>
       </div>
     </div>
   </main>
 </template>
-
-<style scoped>
-main {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  align-items: end;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-input, select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-input {
-  min-width: 200px;
-}
-
-button {
-  padding: 8px 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-button:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
-
-.error {
-  color: #dc3545;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.results {
-  margin-top: 20px;
-}
-
-.results h3 {
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-}
-
-.result-item {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  background-color: #f9f9f9;
-}
-
-.result-item h4 {
-  margin: 0 0 8px 0;
-  color: #333;
-}
-
-.result-item p {
-  margin: 4px 0;
-  color: #666;
-  font-size: 14px;
-}
-
-@media (max-width: 600px) {
-  form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  input {
-    min-width: unset;
-  }
-
-  .results-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
