@@ -2,6 +2,36 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
 
+import { OhVueIcon, addIcons } from "oh-vue-icons";
+import {
+  MdHome, MdHomeOutlined,
+  MdLibrarymusic,
+  MdLibrarymusicOutlined,
+  MdSettings,
+  MdSettingsOutlined,
+  MdAlbum,
+  MdCalendarmonth,
+  MdHighquality,
+  MdPlayarrow,
+  MdDownload,
+  MdCheck,
+  MdCheckcircle,
+  MdTimelapse, HiDotsVertical
+} from "oh-vue-icons/icons";
+
+addIcons(
+    MdHome, MdHomeOutlined, MdLibrarymusic, MdSettings, MdSettingsOutlined, MdLibrarymusicOutlined,
+    MdAlbum,
+    MdCalendarmonth,
+    MdHighquality,
+    MdPlayarrow,
+    MdDownload,
+    MdCheck,
+    MdCheckcircle,
+    MdTimelapse,
+    HiDotsVertical
+);
+
 import './main.css'
 
 import { IonicVue } from '@ionic/vue';
@@ -39,6 +69,8 @@ import './theme/variables.css';
 const app = createApp(App)
   .use(IonicVue)
   .use(router);
+
+app.component("v-icon", OhVueIcon);
 
 router.isReady().then(() => {
   app.mount('#app');

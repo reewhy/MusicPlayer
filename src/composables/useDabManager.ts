@@ -2,6 +2,7 @@ import {Album, Song} from "@/types/common";
 import {Capacitor, CapacitorHttp} from "@capacitor/core";
 import {FileTransfer} from "@capacitor/file-transfer";
 import {Directory, Filesystem, ProgressStatus} from "@capacitor/filesystem";
+import { useDatabase } from "@/composables/useDatabase";
 
 let state: ReturnType<typeof createDabManager> | null = null;
 
@@ -9,6 +10,10 @@ function createDabManager() {
     const ROOT_URL = Capacitor.isNativePlatform()
         ? "https://dab.yeet.su/api"
         : "/api"
+
+    const {
+        insertTrack
+    } = useDatabase();
 
     // const MUSIC_URL = Capacitor.isNativePlatform()
     //     ? "https://streaming-qobuz-std.akamaized.net"
@@ -79,6 +84,7 @@ function createDabManager() {
                     path: filePath,
                     progress: true
                 })
+                await insertTrack(song)
 
                 console.log('Finised')
             }
