@@ -1,5 +1,7 @@
 import {Album, Song} from "@/types/common";
 import {Capacitor, CapacitorHttp} from "@capacitor/core";
+import {FileTransfer} from "@capacitor/file-transfer";
+import {Directory, Filesystem, ProgressStatus} from "@capacitor/filesystem";
 
 let state: ReturnType<typeof createDabManager> | null = null;
 
@@ -7,6 +9,10 @@ function createDabManager() {
     const ROOT_URL = Capacitor.isNativePlatform()
         ? "https://dab.yeet.su/api"
         : "/api"
+
+    // const MUSIC_URL = Capacitor.isNativePlatform()
+    //     ? "https://streaming-qobuz-std.akamaized.net"
+    //     : '/music'
 
     async function searchTracks(query: string, offset: number = 0): Promise<Song[] | null> {
         const finalUrl = `${ROOT_URL}/search?q=${encodeURIComponent(query)}&offset=${offset}&type=track`;
@@ -30,6 +36,60 @@ function createDabManager() {
         return await response.album;
     }
 
+    async function downloadSong(song: Song, callback: (progress: ProgressStatus) => void): Promise<void> {
+        try{
+            const permission = await Filesystem.checkPermissions()
+
+            if(permission.publicStorage != 'granted') await Filesystem.requestPermissions();
+
+            await FileTransfer.addListener('progress',  (progress) => {
+                callback(progress)
+                const percent = progress.lengthComputable
+                    ? Math.round((progress.bytes / progress.contentLength) * 100)
+                    : 0;
+                console.log(`Downloaded ${percent}%`);
+            })
+
+            let filePath;
+
+            if(Capacitor.isNativePlatform()){
+                const pathResult = await Filesystem.getUri({
+                    path: `songs/${song.title} - ${song.artist}.flac`,
+                    directory: Directory.Documents
+                })
+
+                filePath = pathResult.uri
+            }
+
+            const streamUrl = `${ROOT_URL}/stream?trackId=${song.id}&quality=27`;
+
+            const finalUrl = await fetchData(streamUrl);
+
+            const url = finalUrl.url;
+
+            console.log(`Downloading ${url}`)
+            console.log(`File path: ${filePath}`)
+
+            let result;
+
+            if(filePath){
+                console.log('Officially downloading');
+                result = await FileTransfer.downloadFile({
+                    url: url,
+                    path: filePath,
+                    progress: true
+                })
+
+                console.log('Finised')
+            }
+
+
+            console.log(result)
+        } catch(error){
+            console.log(error)
+        }
+    }
+
     async function fetchData(url: string) {
         if (Capacitor.isNativePlatform()) {
             const response = await CapacitorHttp.get({
@@ -48,7 +108,8 @@ function createDabManager() {
     return {
         searchTracks,
         searchAlbums,
-        fetchAlbum
+        fetchAlbum,
+        downloadSong
     };
 }
 

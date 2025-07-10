@@ -30,6 +30,22 @@ export default defineConfig({
             console.log('Received response from the target:', proxyRes.statusCode, req.url);
           });
         }
+      },
+      '/music': {
+        target: 'https://streaming-qobuz-std.akamaized.net',
+        changeOrigin: true,
+        secure: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req) =>{
+            console.log('Sending request to the target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('Received response from the target:', proxyRes.statusCode, req.url);
+          });
+        }
       }
     }
   },
