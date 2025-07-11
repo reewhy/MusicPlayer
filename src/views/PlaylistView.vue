@@ -7,6 +7,8 @@ import SongItem from "@/components/SongItem.vue";
 import {ProgressStatus} from "@capacitor/filesystem";
 import { useDatabase } from "@/composables/useDatabase";
 
+import imgUrl from '@/../public/assets/placeholder.png';
+
 const {
   downloadSong,
 } = useDabManager();
@@ -97,7 +99,7 @@ watch(() => route.params.id, (newId) => {
           <div class="aspect-square rounded-2xl overflow-hidden bg-slate-700/50 shadow-2xl shadow-black/50">
             <img
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                :src="playlist?.image"
+                :src="playlist?.image || imgUrl"
                 :alt="`${playlist?.name} album cover`"
                 loading="lazy"
             />
@@ -203,7 +205,7 @@ watch(() => route.params.id, (newId) => {
             v-for="(item, index) in playlist?.tracks"
             :key="item.id || index"
             :result="item"
-            :compact="true"
+            :image="item?.images?.large"
             class="transform hover:scale-105 transition-transform duration-200"
         />
       </div>
