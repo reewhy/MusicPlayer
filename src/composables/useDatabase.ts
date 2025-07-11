@@ -1,6 +1,7 @@
-import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from "@capacitor-community/sqlite"
-import { ref } from "vue"
-import { Song } from "@/types/common"
+import {CapacitorSQLite, SQLiteConnection, SQLiteDBConnection} from "@capacitor-community/sqlite"
+import {ref} from "vue"
+import {Playlist, Song} from "@/types/common"
+import { parseSong } from "@/utils/parseSong";
 
 let state: ReturnType<typeof createDatabase> | null = null
 
@@ -75,6 +76,7 @@ function createDatabase() {
                                                      upc TEXT,
                                                      mediaCount INTEGER,
                                                      parentalWarning INTEGER,
+                                                        downloaded INTEGER,
                                                      streamable INTEGER,
                                                      purchasable INTEGER,
                                                      previewable INTEGER,
@@ -86,6 +88,13 @@ function createDatabase() {
                                                      maximumChannelCount INTEGER,
                                                      images TEXT,
                                                      isrc TEXT
+                );
+            `,
+            `
+                INSERT OR IGNORE INTO playlists VALUES (
+                  0,
+                  'Goonable Songs',
+                  'https://picsum.photos/200'
                 );
             `
         ]
@@ -133,11 +142,204 @@ function createDatabase() {
         }))
     }
 
-    const insertTrack = async (track: Song) => {
-        if (!db.value) return
+    const fetchPlaylist = async (id: number): Promise<Playlist | null> => {
+        try{
+            if (!db.value) return null
+            const res = await db.value.query("SELECT * FROM playlists WHERE id = ?;", [id])
+
+            console.log("Res: ", JSON.stringify(res));
+
+            const tracks = await fetchPlaylistTracks(id);
+
+            console.log("Tracks: ", JSON.stringify(tracks));
+
+            return {
+                ...res,
+                tracks: tracks
+            }
+        } catch(e){
+            console.error("Error while fetching playlist: ", e)
+            return null;
+        }
+    }
+
+    const fetchPlaylistTracks = async (id: number): Promise<Song[]> => {
+        try {
+            console.log("Checking id:", id);
+
+            if (!db.value) return [];
+
+            const res = await db.value.query(
+                "SELECT track FROM playlists_tracks WHERE playlist = ?;",
+                [id]
+            );
+
+            if (!res.values || res.values.length <= 0) return [];
+
+            console.log("Playlist you want:", JSON.stringify(res));
+
+            // Parallel fetching of tracks for better performance
+            const promises = res.values.map(async (row) => {
+                const trackId = row.track;
+                const temp = await db.value!.query(
+                    "SELECT * FROM songs WHERE id = ?;",
+                    [trackId]
+                );
+
+                console.log("Temp:", JSON.stringify(temp));
+
+                if (temp.values && temp.values.length > 0) {
+                    return parseSong(temp.values[0]);
+                } else {
+                    return null;
+                }
+            });
+
+            console.log("Finished fetching songs");
+
+            const result = (await Promise.all(promises)).filter(
+                (track): track is Song => track !== null
+            );
+
+            console.log("Finished everything");
+
+            return result;
+        } catch (e) {
+            console.error("Error while fetching playlist tracks:", e);
+            return [];
+        }
+    };
+
+
+    const getAllPlaylists = async (): Promise<Playlist[] | null> => {
+        if (!db.value) return null;
+
+        try {
+            const res = await db.value.query("SELECT * FROM playlists;");
+            const playlists = res.values ?? [];
+
+            console.log("Playlists found:", JSON.stringify(playlists));
+
+            const result: Playlist[] = await Promise.all(
+                playlists.map(async (playlist) => {
+                    const tracks = await fetchPlaylistTracks(playlist.id);
+
+                    const final: Playlist = {
+                        ...playlist,
+                        tracks: tracks
+                    }
+
+                    return final;
+                })
+            );
+
+            return result;
+        } catch (e) {
+            console.error("Error while fetching all playlists:", e);
+            return null;
+        }
+    };
+
+    const getTrack = async (song: Song): Promise<Song | null> => {
+        try{
+            if (!db.value) return null
+            const res = await db.value.query("SELECT * FROM songs WHERE id = ?;", [song.id])
+            if(res.values && res.values.length > 0) {
+                return parseSong(res.values[0]);
+            } else return null;
+        } catch(e){
+            console.error(e)
+            return null;
+        }
+    }
+
+    const checkIfTrackLiked = async (song: Song): Promise<boolean> => {
+        try {
+            if (!db.value) return false
+            const res = await db.value.query("SELECT COUNT(*) as count FROM playlists_tracks WHERE track = ?;", [song.id])
+
+            console.log("Full response:", JSON.stringify(res, null, 2))
+            console.log("res.values:", JSON.stringify(res.values, null, 2))
+
+            if (res.values && res.values.length > 0) {
+                console.log("First row:", JSON.stringify(res.values[0], null, 2))
+                // Try accessing as object property instead of array index
+                const count = res.values[0].count as number
+                console.log("Count value:", count)
+                return count > 0
+            }
+
+            return false
+        } catch (e) {
+            console.error(e)
+            return false
+        }
+    }
+
+    const removeTrack = async (track: Song) => {
+        if(!db.value) return;
 
         const statement = `
-            INSERT INTO songs (
+            DELETE FROM songs WHERE id=?;
+        `
+
+        const value = [track.id];
+
+        await db.value.run(statement, value)
+    }
+
+    const likeSong = async (track: Song): Promise<boolean> => {
+        if(!db.value) return false;
+        if(!await insertTrack(track)) return false;
+
+        console.log("Insert song")
+
+        const statement = `
+            INSERT INTO playlists_tracks(playlist, track) VALUES(?, ?);
+        `;
+
+        const values = [
+            0,
+            track.id,
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            console.log(`Track ${track.id} like!`)
+            return true
+        } catch (error) {
+            console.error(`Failed to like track ${track.id}:`, error)
+            return false
+        }
+    }
+
+    const unlikeSong = async (track: Song): Promise<boolean> => {
+        if(!db.value) return false;
+
+        const statement = `
+            REMOVE FROM playlists_tracks WHERE playlist=? AND track=?;
+        `;
+
+        const values = [
+            0,
+            track.id
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            console.log(`Track ${track.id} removed!`)
+            return true
+        } catch (error) {
+            console.error(`Failed to insert track ${track.id}:`, error)
+            return false
+        }
+    }
+
+    const insertTrack = async (track: Song): Promise<boolean> => {
+        if (!db.value) return false
+
+        const statement = `
+            INSERT OR IGNORE INTO songs (
                 id, title, artist, artistId, albumTitle, albumId, releaseDate, genre,
                 duration, audioQuality, version, label, labelId, upc, mediaCount,
                 parentalWarning, streamable, purchasable, previewable,
@@ -147,39 +349,43 @@ function createDatabase() {
         `
 
         const values = [
-            track.id ?? '',
-            track.title ?? '',
-            track.artist ?? '',
-            track.artistId ?? '',
-            track.albumTitle ?? '',
-            track.albumId ?? '',
-            track.releaseDate ?? '',
-            track.genre ?? '',
+            track.id ?? null,
+            track.title ?? null,
+            track.artist ?? null,
+            track.artistId ?? null,
+            track.albumTitle ?? null,
+            track.albumId ?? null,
+            track.releaseDate ?? null,
+            track.genre ?? null,
             track.duration ?? null,
-            track.audioQuality ? JSON.stringify(track.audioQuality) : '',
-            track.version ?? '',
-            track.label ?? '',
+            track.audioQuality ? JSON.stringify(track.audioQuality) : null,
+            track.version ?? null,
+            track.label ?? null,
             track.labelId ?? null,
-            track.upc ?? '',
+            track.upc ?? null,
             track.mediaCount ?? null,
             track.parentalWarning ? 1 : 0,
             track.streamable ? 1 : 0,
             track.purchasable ? 1 : 0,
             track.previewable ? 1 : 0,
             track.genreId ?? null,
-            track.genreSlug ?? '',
-            track.genreColor ?? '',
-            track.releaseDateStream ?? '',
-            track.releaseDateDownload ?? '',
+            track.genreSlug ?? null,
+            track.genreColor ?? null,
+            track.releaseDateStream ?? null,
+            track.releaseDateDownload ?? null,
             track.maximumChannelCount ?? null,
-            track.images ? JSON.stringify(track.images) : '',
-            track.isrc ?? ''
+            track.images ? JSON.stringify(track.images) : null,
+            track.isrc ?? null
         ]
 
-
-        await db.value.run(statement, values)
-
-        console.log(`Track ${track.id} inserted!`)
+        try {
+            await db.value.run(statement, values)
+            console.log(`Track ${track.id} inserted!`)
+            return true
+        } catch (error) {
+            console.error(`Failed to insert track ${track.id}:`, error)
+            return false
+        }
     }
 
     return {
@@ -187,7 +393,15 @@ function createDatabase() {
         getAllTracks,
         openDB,
         createTable,
-        dropAllTables
+        dropAllTables,
+        removeTrack,
+        getTrack,
+        checkIfTrackLiked,
+        likeSong,
+        unlikeSong,
+        getAllPlaylists,
+        fetchPlaylist,
+        fetchPlaylistTracks
     }
 }
 

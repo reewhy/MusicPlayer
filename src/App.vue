@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { StatusBar } from '@capacitor/status-bar';
-import {onMounted, computed} from "vue";
+import {onMounted, computed, ref} from "vue";
 import { useRoute } from "vue-router";
 import { useDatabase } from "@/composables/useDatabase";
+import OverlayScreen from "@/components/OverlayScreen.vue";
+import { useOverlayStore } from "@/stores/overlayStore";
+
+const overlay = useOverlayStore();
 
 const {
   openDB,
@@ -73,6 +77,8 @@ onMounted(async () => {
       </router-link>
     </div>
   </nav>
+
+  <OverlayScreen :enabled="overlay.isOpen"></OverlayScreen>
 </template>
 
 <style scoped>

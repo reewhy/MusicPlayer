@@ -7,7 +7,6 @@ import AlbumItem from "@/components/AlbumItem.vue";
 
 const { searchAlbums, searchTracks } = useDabManager()
 const route = useRoute()
-
 // Reactive form data
 const title = ref('')
 const type = ref<'track' | 'album'>('track')
@@ -58,12 +57,12 @@ const restoreSearchState = () => {
     searchResults.value = savedState.results || []
 
     // Focus the search input after restoration
-    setTimeout(() => {
-      const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement
-      if (searchInput) {
-        searchInput.focus()
-      }
-    }, 100)
+    // setTimeout(() => {
+    //   const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement
+    //   if (searchInput) {
+    //     searchInput.focus()
+    //   }
+    // }, 100)
   }
 }
 

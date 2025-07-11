@@ -6,20 +6,24 @@ const props = defineProps({
 
 <template>
   <RouterLink
-      class="group relative overflow-hidden rounded-2xl bg-slate-800/60 border border-slate-600/50 p-4 transition-all duration-300 hover:bg-slate-700/60 hover:border-slate-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transform hover:scale-105"
+      class="
+        group relative overflow-hidden rounded-2xl bg-slate-800/60 border border-slate-600/50 p-4 transition-all duration-300
+        hover:bg-slate-700/60 hover:border-slate-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transform hover:scale-105
+        active:bg-slate-700/60 active:border-slate-500/50 active:shadow-lg active:shadow-indigo-500/10 active:scale-105
+      "
       :to="{name: 'album', params: {id: props.result?.id}}"
   >
     <!-- Background gradient overlay -->
-    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"></div>
 
     <!-- Content grid -->
     <div class="relative z-10 grid grid-cols-[1fr_80px] gap-4">
       <!-- Text content -->
       <div class="flex flex-col justify-center space-y-2">
-        <h4 class="text-base font-semibold text-white group-hover:text-indigo-300 transition-colors duration-300 line-clamp-2">
+        <h4 class="text-base font-semibold text-white group-hover:text-indigo-300 group-active:text-indigo-300 transition-colors duration-300 line-clamp-2">
           {{ props.result?.title }}
         </h4>
-        <p class="text-sm text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
+        <p class="text-sm text-slate-400 group-hover:text-slate-300 group-active:text-slate-300 transition-colors duration-300">
           {{ props.result?.artist }}
         </p>
         <div class="flex items-center gap-2 text-xs text-slate-500">
@@ -49,9 +53,9 @@ const props = defineProps({
 
       <!-- Album cover -->
       <div class="relative">
-        <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-shadow duration-300">
+        <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
-              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              class="w-full h-full object-cover group-hover:scale-110 group-active:scale-110 transition-transform duration-500"
               :src="props.result?.images?.large || props.result?.cover"
               :alt="`${props.result?.title} album cover`"
               loading="lazy"
@@ -59,8 +63,8 @@ const props = defineProps({
         </div>
 
         <!-- Play overlay on hover -->
-        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-xl">
-          <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 flex items-center justify-center rounded-xl">
+          <div class="w-8 h-8  rounded-full flex items-center justify-center">
             <v-icon name="md-playarrow" scale="1.2" class="text-white ml-0.5"></v-icon>
           </div>
         </div>

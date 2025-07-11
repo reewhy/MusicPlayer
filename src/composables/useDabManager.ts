@@ -84,7 +84,6 @@ function createDabManager() {
                     path: filePath,
                     progress: true
                 })
-                await insertTrack(song)
 
                 console.log('Finised')
             }

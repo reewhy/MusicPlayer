@@ -11,6 +11,13 @@ export interface Images {
     back?: string;
 }
 
+export interface Playlist {
+    id?: number;
+    name?: string;
+    image?: string;
+    tracks?: Song[];
+}
+
 export interface Song {
     id?: string;
     title?: string;
@@ -64,3 +71,4 @@ export interface AlbumsResponse {
 export interface TracksResponse {
     tracks?: Song[];
 }
+

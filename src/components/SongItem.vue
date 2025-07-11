@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { useDabManager } from "@/composables/useDabManager";
-import { ref } from "vue";
+import {ref, shallowRef, useTemplateRef} from "vue";
 import {ProgressStatus} from "@capacitor/filesystem";
+import {onLongPress} from "@vueuse/core";
+import { useOverlayStore } from "@/stores/overlayStore";
+
+const overlay = useOverlayStore();
 
 const props = defineProps({
   result: Object,
   image: String,
   compact: Boolean
 })
+
 
 const {
   downloadSong
@@ -45,28 +50,50 @@ const formatDuration = (seconds: number | undefined) => {
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
+
+const htmlRefHook = useTemplateRef<HTMLElement>('htmlRefHook')
+const longPressHook = shallowRef(false)
+
+function onLongPressCallbackHook() {
+  longPressHook.value = true;
+  overlay.openOverlay(props.result!);
+}
+
+onLongPress(
+    htmlRefHook,
+    onLongPressCallbackHook,
+    {
+      modifiers: {
+        prevent: true
+      }
+    }
+)
 </script>
 
 <template>
   <div
-      class="group relative overflow-hidden rounded-2xl bg-slate-800/60 border border-slate-600/50 p-4 transition-all duration-300 hover:bg-slate-700/60 hover:border-slate-500/50 hover:shadow-lg hover:shadow-indigo-500/10 cursor-pointer"
+      class="group relative overflow-hidden rounded-2xl bg-slate-800/60 border border-slate-600/50 p-4 transition-all duration-300
+      hover:bg-slate-700/60 hover:border-slate-500/50 hover:shadow-lg hover:shadow-indigo-500/10
+      active:bg-slate-700/60 active:border-slate-500/50 active:shadow-lg active:shadow-indigo-500/10
+      cursor-pointer"
       :class="{
         'bg-green-900/20 border-green-500/50': isDownloaded,
         'bg-indigo-900/20 border-indigo-500/50': isDownloading
       }"
+      ref="htmlRefHook"
       @click="download"
   >
     <!-- Background gradient overlay -->
-    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20 opacity-0 group-hover:opacity-100  group-active:opacity-100 transition-opacity duration-300"></div>
 
     <!-- Content grid -->
     <div class="relative z-10 grid grid-cols-[1fr_60px] gap-4">
       <!-- Text content -->
       <div class="flex flex-col justify-center space-y-2">
-        <h4 class="text-base font-semibold text-white group-hover:text-indigo-300 transition-colors duration-300 line-clamp-2">
+        <h4 class="text-base font-semibold text-white group-hover:text-indigo-300 group-active:text-indigo-300 transition-colors duration-300 line-clamp-2">
           {{ props.result?.title }}
         </h4>
-        <p class="text-sm text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
+        <p class="text-sm text-slate-400 group-hover:text-slate-300 group-active:text-slate-300 transition-colors duration-300">
           {{ props.result?.artist }}
         </p>
         <p class="text-sm text-slate-500" v-if="!props.compact">
@@ -104,7 +131,7 @@ const formatDuration = (seconds: number | undefined) => {
 
       <!-- Album cover & download button -->
       <div class="relative" v-if="!props.compact">
-        <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-shadow duration-300">
+        <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
               class="w-full h-full object-cover"
               :src="image || props.result?.images?.large"
@@ -114,7 +141,7 @@ const formatDuration = (seconds: number | undefined) => {
         </div>
 
         <!-- Download status overlay -->
-        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-xl"
+        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-xl"
              :class="{
                'opacity-100 bg-green-900/40': isDownloaded,
                'opacity-100 bg-indigo-900/40': isDownloading
@@ -135,7 +162,7 @@ const formatDuration = (seconds: number | undefined) => {
       </div>
 
       <div class="relative" v-else>
-        <div class="aspect-square rounded-xl overflow-hidden group-hover:shadow-lg group-hover:shadow-indigo-500/20 transition-shadow duration-300 w-full h-full">
+        <div class="aspect-square rounded-xl overflow-hidden group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300 w-full h-full">
           <v-icon name="hi-dots-vertical" scale="1.5" class="text-white h-full w-full"></v-icon>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
+import { createPinia } from 'pinia'
 
 import { OhVueIcon, addIcons } from "oh-vue-icons";
 import {
@@ -16,7 +17,18 @@ import {
   MdDownload,
   MdCheck,
   MdCheckcircle,
-  MdTimelapse, HiDotsVertical
+  MdTimelapse,
+  HiDotsVertical,
+  // New icons for the overlay
+  MdFavorite,
+  MdFavoriteborder,
+  MdShare,
+  MdPlaylistadd,
+  MdVisibilityoff,
+  MdQueuemusic,
+  MdPerson,
+  MdHeadphones,
+  MdRadio
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -29,7 +41,17 @@ addIcons(
     MdCheck,
     MdCheckcircle,
     MdTimelapse,
-    HiDotsVertical
+    HiDotsVertical,
+    // New icons for the overlay
+    MdFavorite,
+    MdFavoriteborder,
+    MdShare,
+    MdPlaylistadd,
+    MdVisibilityoff,
+    MdQueuemusic,
+    MdPerson,
+    MdHeadphones,
+    MdRadio
 );
 
 import './main.css'
@@ -68,7 +90,8 @@ import './theme/variables.css';
 
 const app = createApp(App)
   .use(IonicVue)
-  .use(router);
+  .use(router)
+  .use(createPinia());
 
 app.component("v-icon", OhVueIcon);
 
