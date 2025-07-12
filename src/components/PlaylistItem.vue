@@ -1,22 +1,55 @@
 <script setup lang="ts">
 import {Playlist} from "@/types/common";
-import { RouterLink } from 'vue-router';
+import { useRouter } from 'vue-router';
+import {shallowRef, useTemplateRef} from "vue";
+import {onLongPress} from "@vueuse/core";
+import { useOverlayStore } from "@/stores/overlayStore";
+
+const overlay = useOverlayStore();
+const router = useRouter();
 
 const props = defineProps<{
   result: Playlist
 }>()
 
-console.log("Playlists: ", JSON.stringify(props, null, 2))
+const htmlRefHook = useTemplateRef<HTMLElement>('htmlRefHook')
+const longPressHook = shallowRef(false)
+
+function onLongPressCallbackHook() {
+  longPressHook.value = true;
+  console.log("Opening playlist: ", JSON.stringify(props.result!, null ,2))
+  overlay.openPlaylist(props.result!);
+}
+
+const handleClick = () => {
+  if (!longPressHook.value) {
+    // Only navigate if it wasn't a long press
+    router.push({name: 'playlist', params: {id: props.result.id}});
+  }
+  longPressHook.value = false; // Reset for next interaction
+}
+
+onLongPress(
+    htmlRefHook,
+    onLongPressCallbackHook,
+    {
+      modifiers: {
+        prevent: true
+      }
+    }
+)
 </script>
 
 <template>
-  <RouterLink
+  <div
       class="
         group relative overflow-hidden rounded-2xl bg-slate-800/60 border border-slate-600/50 p-4 transition-all duration-300
         hover:bg-slate-700/60 hover:border-slate-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transform hover:scale-105
         active:bg-slate-700/60 active:border-slate-500/50 active:shadow-lg active:shadow-indigo-500/10 active:scale-105
+        cursor-pointer
       "
-      :to="{name: 'playlist', params: {id: props.result.id}}"
+      ref="htmlRefHook"
+      @click="handleClick"
   >
     <!-- Background gradient overlay -->
     <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"></div>
@@ -42,7 +75,7 @@ console.log("Playlists: ", JSON.stringify(props, null, 2))
         </h4>
       </div>
     </div>
-  </RouterLink>
+  </div>
 </template>
 
 <style scoped>

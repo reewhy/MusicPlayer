@@ -142,21 +142,84 @@ function createDatabase() {
         }))
     }
 
-    const fetchPlaylist = async (id: number): Promise<Playlist | null> => {
+    const createPlaylist = async (name: string): Promise<boolean> => {
+        if(!db.value) return false;
+
+        const statement = `
+            INSERT INTO playlists(name) VALUES(?);
+        `;
+
+        const values = [
+            name
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            return true
+        } catch (error) {
+            return false
+        }
+    }
+
+    const updatePlaylistName = async (id: number, name: string): Promise<boolean> => {
+        if(!db.value) return false;
+        if(id === null || name === null) return false;
+
+        const statement = `
+            UPDATE playlists SET name=? WHERE id=?;
+        `;
+
+        const values = [
+            name,
+            id
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            return true
+        } catch (error) {
+            return false
+        }
+    }
+
+    const deletePlaylist = async (id: number): Promise<boolean> => {
+        if(!db.value) return false;
+        if(id === null) return false;
+
+        const statement = `
+            DELETE FROM playlists WHERE id=?;
+        `;
+
+        const values = [
+            id
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            return true
+        } catch (error) {
+            return false
+        }
+    }
+
+    const fetchPlaylist = async (id: number): Promise<Playlist | null | undefined> => {
         try{
             if (!db.value) return null
             const res = await db.value.query("SELECT * FROM playlists WHERE id = ?;", [id])
 
-            console.log("Res: ", JSON.stringify(res));
+            if(res.values && res.values!.length > 0) {
+                const playlist = res.values[0];
 
-            const tracks = await fetchPlaylistTracks(id);
+                const tracks = await fetchPlaylistTracks(id);
 
-            console.log("Tracks: ", JSON.stringify(tracks));
-
-            return {
-                ...res,
-                tracks: tracks
+                return {
+                    ...playlist,
+                    tracks: tracks
+                }
+            } else {
+                return null;
             }
+
         } catch(e){
             console.error("Error while fetching playlist: ", e)
             return null;
@@ -401,7 +464,10 @@ function createDatabase() {
         unlikeSong,
         getAllPlaylists,
         fetchPlaylist,
-        fetchPlaylistTracks
+        fetchPlaylistTracks,
+        createPlaylist,
+        updatePlaylistName,
+        deletePlaylist
     }
 }
 

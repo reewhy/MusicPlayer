@@ -3,7 +3,9 @@ import { useDatabase } from "@/composables/useDatabase";
 import { onMounted, ref } from "vue";
 import PlaylistItem from "@/components/PlaylistItem.vue";
 import type { Playlist } from "@/types/common"; // adjust if needed
+import { useOverlayStore } from "@/stores/overlayStore";
 
+const overlay = useOverlayStore();
 const { getAllPlaylists } = useDatabase();
 
 const playlists = ref<Playlist[]>([]);
@@ -62,6 +64,18 @@ onMounted(async () => {
           No playlists found.
         </h3>
       </div>
+    </div>
+
+    <!-- Fab button -->
+    <div
+        class="fixed bottom-1/7 right-6 border bg-indigo-600/30 shadow-lg shadow-indigo-500/20 hover:bg-slate-700/60 p-4 rounded-xl shadow-2xl backdrop-blur-lg backdrop-saturate-150 border border-slate-700/50 cursor-pointer transform hover:scale-110 active:scale-95 transition-all duration-200 group"
+        @click="overlay.openOver()"
+    >
+      <v-icon
+          name="md-add"
+          scale="2"
+          class="text-white text-xl group-hover:rotate-90 transition-transform duration-200"
+      ></v-icon>
     </div>
   </main>
 </template>

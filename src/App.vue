@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { StatusBar } from '@capacitor/status-bar';
-import {onMounted, computed, ref} from "vue";
+import {onMounted, computed} from "vue";
 import { useRoute } from "vue-router";
 import { useDatabase } from "@/composables/useDatabase";
-import OverlayScreen from "@/components/OverlayScreen.vue";
+import OverlayScreen from "@/components/overlays/OverlayScreen.vue";
 import { useOverlayStore } from "@/stores/overlayStore";
+import OverScreen from "@/components/overlays/OverScreen.vue";
+import PlaylistScreen from "@/components/overlays/PlaylistScreen.vue";
 
 const overlay = useOverlayStore();
 
@@ -79,6 +81,8 @@ onMounted(async () => {
   </nav>
 
   <OverlayScreen :enabled="overlay.isOpen"></OverlayScreen>
+  <OverScreen :enabled="overlay.isOverOpen"></OverScreen>
+  <PlaylistScreen :enabled="overlay.isPlaylistOpen"></PlaylistScreen>
 </template>
 
 <style scoped>

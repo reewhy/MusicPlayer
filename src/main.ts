@@ -28,7 +28,7 @@ import {
   MdQueuemusic,
   MdPerson,
   MdHeadphones,
-  MdRadio
+  MdRadio, MdAdd, FaEdit, MdDeleteOutlined
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -51,7 +51,10 @@ addIcons(
     MdQueuemusic,
     MdPerson,
     MdHeadphones,
-    MdRadio
+    MdRadio,
+    MdAdd,
+    FaEdit,
+    MdDeleteOutlined
 );
 
 import './main.css'

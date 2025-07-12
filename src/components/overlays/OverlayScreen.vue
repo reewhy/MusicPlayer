@@ -175,15 +175,15 @@ const closeOverlay = (event: Event) => {
             </button>
 
             <!-- Hide from playlist -->
-<!--            <button-->
-<!--                @click="hideFromPlaylist"-->
-<!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
-<!--            >-->
-<!--              <div class="w-6 h-6 flex items-center justify-center">-->
-<!--                <v-icon name="md-visibilityoff" scale="1.1" class="text-slate-400" />-->
-<!--              </div>-->
-<!--              <span class="text-white text-base font-medium">Nascondi da questa playlist</span>-->
-<!--            </button>-->
+            <!--            <button-->
+            <!--                @click="hideFromPlaylist"-->
+            <!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
+            <!--            >-->
+            <!--              <div class="w-6 h-6 flex items-center justify-center">-->
+            <!--                <v-icon name="md-visibilityoff" scale="1.1" class="text-slate-400" />-->
+            <!--              </div>-->
+            <!--              <span class="text-white text-base font-medium">Nascondi da questa playlist</span>-->
+            <!--            </button>-->
 
             <!-- Add to queue -->
             <button
@@ -218,26 +218,26 @@ const closeOverlay = (event: Event) => {
             </button>
 
             <!-- Start a Jam -->
-<!--            <button-->
-<!--                @click="startJam"-->
-<!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
-<!--            >-->
-<!--              <div class="w-6 h-6 flex items-center justify-center">-->
-<!--                <v-icon name="md-headphones" scale="1.1" class="text-slate-400" />-->
-<!--              </div>-->
-<!--              <span class="text-white text-base font-medium">Avvia una Jam</span>-->
-<!--            </button>-->
+            <!--            <button-->
+            <!--                @click="startJam"-->
+            <!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
+            <!--            >-->
+            <!--              <div class="w-6 h-6 flex items-center justify-center">-->
+            <!--                <v-icon name="md-headphones" scale="1.1" class="text-slate-400" />-->
+            <!--              </div>-->
+            <!--              <span class="text-white text-base font-medium">Avvia una Jam</span>-->
+            <!--            </button>-->
 
             <!-- Start radio -->
-<!--            <button-->
-<!--                @click="startRadio"-->
-<!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
-<!--            >-->
-<!--              <div class="w-6 h-6 flex items-center justify-center">-->
-<!--                <v-icon name="md-radio" scale="1.1" class="text-slate-400" />-->
-<!--              </div>-->
-<!--              <span class="text-white text-base font-medium">Vai a Radio dal brano</span>-->
-<!--            </button>-->
+            <!--            <button-->
+            <!--                @click="startRadio"-->
+            <!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
+            <!--            >-->
+            <!--              <div class="w-6 h-6 flex items-center justify-center">-->
+            <!--                <v-icon name="md-radio" scale="1.1" class="text-slate-400" />-->
+            <!--              </div>-->
+            <!--              <span class="text-white text-base font-medium">Vai a Radio dal brano</span>-->
+            <!--            </button>-->
 
             <!-- Download -->
             <button

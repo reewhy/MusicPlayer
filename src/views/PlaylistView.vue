@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { useDabManager } from "@/composables/useDabManager";
-import {onMounted, ref, watch, computed} from "vue";
+import {onMounted, ref, watch, computed, useTemplateRef, shallowRef} from "vue";
 import {Playlist} from "@/types/common";
 import SongItem from "@/components/SongItem.vue";
 import {ProgressStatus} from "@capacitor/filesystem";
 import { useDatabase } from "@/composables/useDatabase";
+import { useOverlayStore } from "@/stores/overlayStore";
+import {onLongPress} from "@vueuse/core";
 
-import imgUrl from '@/../public/assets/placeholder.png';
+const overlay = useOverlayStore();
 
 const {
   downloadSong,
@@ -59,7 +61,6 @@ const download = async () => {
 
 const fetchPlaylistData = async (playlistId: number) => {
   playlist.value = await fetchPlaylist(playlistId);
-  console.log(playlist.value?.name)
 }
 
 // Format duration from seconds to mm:ss
@@ -83,12 +84,40 @@ onMounted(async () => {
 watch(() => route.params.id, (newId) => {
   if (newId) fetchPlaylistData(parseInt(newId));
 })
+
+
+const playlistRefHook = useTemplateRef<HTMLElement>('playlistRefHook')
+const longPressHook = shallowRef(false)
+
+function onLongPressCallbackHook() {
+  longPressHook.value = true;
+  overlay.openPlaylist(playlist.value!);
+
+  console.log("Long pressed")
+}
+
+onLongPress(
+    playlistRefHook,
+    onLongPressCallbackHook,
+    {
+      modifiers: {
+        prevent: true
+      }
+    }
+)
 </script>
 
 <template>
   <main class="max-w-6xl mx-auto p-2 pb-24">
     <!-- Album Header -->
-    <div class="mb-8 relative overflow-hidden rounded-2xl bg-slate-800/60 backdrop-blur-xl border border-slate-600/50 p-4">
+    <div
+        class="
+          mb-8 relative overflow-hidden rounded-2xl bg-slate-800/60 backdrop-blur-xl border border-slate-600/50 p-4
+          hover:bg-slate-700/60 hover:border-slate-500/50 hover:shadow-lg hover:shadow-indigo-500/10
+          active:bg-slate-700/60 active:border-slate-500/50 active:shadow-lg active:shadow-indigo-500/10
+        "
+        ref="playlistRefHook"
+    >
       <!-- Background gradient -->
       <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/30 via-slate-800/50 to-purple-900/30"></div>
 
@@ -99,7 +128,7 @@ watch(() => route.params.id, (newId) => {
           <div class="aspect-square rounded-2xl overflow-hidden bg-slate-700/50 shadow-2xl shadow-black/50">
             <img
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                :src="playlist?.image || imgUrl"
+                :src="playlist?.image || 'assets/placeholder.png'"
                 :alt="`${playlist?.name} album cover`"
                 loading="lazy"
             />
