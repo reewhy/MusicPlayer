@@ -2,6 +2,11 @@
 import { useOverlayStore } from "@/stores/overlayStore";
 import { useDatabase } from "@/composables/useDatabase";
 import {ref, nextTick, watch} from "vue";
+import { useConfirm } from "@/composables/useConfirm";
+
+const {
+  confirmSave
+} = useConfirm();
 
 const {
   createPlaylist,
@@ -27,8 +32,10 @@ const createNewPlaylist = async () => {
     if(overlay.editingPlaylist === null){
       await createPlaylist(playlistName.value.trim());
     } else {
-      await updatePlaylistName(overlay.editingPlaylist.id!, playlistName.value.trim());
-
+      const confirmed = await confirmSave();
+      if (confirmed) {
+        await updatePlaylistName(overlay.editingPlaylist.id!, playlistName.value.trim());
+      }
       overlay.editingPlaylist = null;
     }
     overlay.closeOver();

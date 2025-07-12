@@ -7,6 +7,7 @@ import OverlayScreen from "@/components/overlays/OverlayScreen.vue";
 import { useOverlayStore } from "@/stores/overlayStore";
 import OverScreen from "@/components/overlays/OverScreen.vue";
 import PlaylistScreen from "@/components/overlays/PlaylistScreen.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 const overlay = useOverlayStore();
 
@@ -83,6 +84,7 @@ onMounted(async () => {
   <OverlayScreen :enabled="overlay.isOpen"></OverlayScreen>
   <OverScreen :enabled="overlay.isOverOpen"></OverScreen>
   <PlaylistScreen :enabled="overlay.isPlaylistOpen"></PlaylistScreen>
+  <ConfirmDialog></ConfirmDialog>
 </template>
 
 <style scoped>

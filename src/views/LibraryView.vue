@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDatabase } from "@/composables/useDatabase";
-import { onMounted, ref } from "vue";
+import {onActivated, onMounted, onRenderTracked, ref} from "vue";
 import PlaylistItem from "@/components/PlaylistItem.vue";
 import type { Playlist } from "@/types/common"; // adjust if needed
 import { useOverlayStore } from "@/stores/overlayStore";
@@ -13,6 +13,7 @@ const isLoading = ref(true);
 
 onMounted(async () => {
   try {
+    isLoading.value = true;
     playlists.value = await getAllPlaylists() || [];
   } catch (error) {
     console.error("Error in LibraryView:", error);

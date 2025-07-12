@@ -1,5 +1,15 @@
 <script setup lang="ts">
 import { useOverlayStore } from "@/stores/overlayStore";
+import { useConfirm } from "@/composables/useConfirm";
+import { useDatabase } from "@/composables/useDatabase";
+
+const {
+  confirmDelete
+} = useConfirm();
+
+const {
+  deletePlaylist
+} = useDatabase();
 
 const overlay = useOverlayStore();
 
@@ -19,8 +29,13 @@ const editPlaylist = () => {
   overlay.closePlaylist()
 }
 
-const deletePlaylist = () => {
-
+const deleteOpenPlaylist = async () => {
+  const confirmed = await confirmDelete(`playlist "${overlay.editingPlaylist.name}"`);
+  if (confirmed) {
+    await deletePlaylist(overlay.editingPlaylist.id);
+    overlay.closePlaylist()
+    overlay.closeOver()
+  }
 }
 </script>
 
@@ -77,7 +92,7 @@ const deletePlaylist = () => {
             </button>
 
             <button
-                @click="deletePlaylist"
+                @click="deleteOpenPlaylist"
                 class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"
             >
               <div class="w-6 h-6 flex items-center justify-center">

@@ -184,7 +184,7 @@ function createDatabase() {
 
     const deletePlaylist = async (id: number): Promise<boolean> => {
         if(!db.value) return false;
-        if(id === null) return false;
+        if(id === null || id === 0) return false;
 
         const statement = `
             DELETE FROM playlists WHERE id=?;

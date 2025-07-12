@@ -61,7 +61,7 @@ onLongPress(
         <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
               class="w-full h-full object-cover group-hover:scale-110 group-active:scale-110 transition-transform duration-500"
-              :src="result.image"
+              :src="result.image || 'assets/placeholder.png'"
               :alt="`${result.name} album cover`"
               loading="lazy"
           />
