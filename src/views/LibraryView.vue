@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDatabase } from "@/composables/useDatabase";
-import {onActivated, onMounted, onRenderTracked, ref} from "vue";
+import {onMounted, ref} from "vue";
 import PlaylistItem from "@/components/PlaylistItem.vue";
 import type { Playlist } from "@/types/common"; // adjust if needed
 import { useOverlayStore } from "@/stores/overlayStore";
@@ -37,7 +37,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="pt-32">
+    <div class="pt-16">
       <!-- Loading state -->
       <div v-if="isLoading" class="text-center py-12">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>

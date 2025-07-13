@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import {onMounted, ref, watch} from 'vue'
+import {ref, watch} from 'vue'
 import { useOverlayStore } from "@/stores/overlayStore";
 import { useDatabase } from "@/composables/useDatabase";
+import { useRoute } from "vue-router";
+import { reloadPage } from '@/utils/reloadPage';
+
+const route = useRoute();
 
 const {
-  insertTrack,
-  removeTrack,
-  getTrack,
   checkIfTrackLiked,
   likeSong,
   unlikeSong,
+    removeFromPlaylist
 } = useDatabase();
 
 const overlay = useOverlayStore();
@@ -34,6 +36,8 @@ const toggleLike = async () => {
 
   isLiked.value ? await likeSong(overlay.objData) : await unlikeSong(overlay.objData)
 
+  if(route.params.id === "0") reloadPage();
+
   console.log('Like toggled:', isLiked.value)
 }
 
@@ -43,12 +47,14 @@ const shareTrack = () => {
 }
 
 const addToPlaylist = () => {
-  console.log('Add to playlist')
-  overlay.closeOverlay()
+  overlay.openAdd()
 }
 
-const hideFromPlaylist = () => {
-  console.log('Hide from this playlist')
+const removeFromThePlaylist = async () => {
+  if(overlay.objData.id !== undefined){
+    await removeFromPlaylist(overlay.objData.id, parseInt(route.params.id))
+  }
+  reloadPage();
   overlay.closeOverlay()
 }
 
@@ -66,17 +72,6 @@ const goToAlbum = () => {
   console.log('Go to artist')
   overlay.closeOverlay()
 }
-
-const startRadio = () => {
-  console.log('Start radio from this track')
-  overlay.closeOverlay()
-}
-
-const startJam = () => {
-  console.log('Start a Jam')
-  overlay.closeOverlay()
-}
-
 const downloadTrack = () => {
   console.log('Download track')
   overlay.closeOverlay()
@@ -114,7 +109,7 @@ const closeOverlay = (event: Event) => {
               <!-- Album artwork -->
               <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-700/50 shadow-md flex-shrink-0">
                 <img
-                    :src="overlay.objData?.images?.large || overlay.objData?.cover || '/placeholder-album.jpg'"
+                    :src="overlay.objData?.images?.large || 'assets/placeholder.png'"
                     :alt="`${overlay.objData?.title} album cover`"
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -127,7 +122,7 @@ const closeOverlay = (event: Event) => {
                   {{ overlay.objData?.title || 'Unknown Track' }}
                 </h3>
                 <p class="text-sm text-slate-400 truncate">
-                  {{ overlay.objData?.artist || 'Unknown Artist' }} • {{ overlay.objData?.albumTitle || 'Unknown Album' }}
+                  {{ overlay.objData?.artist || 'Unknown Artist' }} • {{ overlay.objData?.title || 'Unknown Album' }}
                 </p>
               </div>
             </div>
@@ -172,6 +167,18 @@ const closeOverlay = (event: Event) => {
                 <v-icon name="md-playlistadd" scale="1.1" class="text-slate-400" />
               </div>
               <span class="text-white text-base font-medium">Add to playlist</span>
+            </button>
+
+            <!-- Remove from playlist -->
+            <button
+                @click="removeFromThePlaylist"
+                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"
+                v-if="overlay.inPlaylist"
+            >
+              <div class="w-6 h-6 flex items-center justify-center">
+                <v-icon name="md-delete-outlined" scale="1.1" class="text-slate-400" />
+              </div>
+              <span class="text-white text-base font-medium">Remove from playlist</span>
             </button>
 
             <!-- Hide from playlist -->

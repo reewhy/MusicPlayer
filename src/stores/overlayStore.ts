@@ -6,13 +6,17 @@ export const useOverlayStore = defineStore('overlay', () => {
     const isOptionsOpen = ref<boolean>(false);
     const isOverOpen = ref<boolean>(false);
     const isPlaylistOpen = ref<boolean>(false);
+    const isAddOpen = ref<boolean>(false);
+
+    const inPlaylist = ref<boolean>(false);
 
     const editingPlaylist = ref<Playlist | null>(null);
     const objData = ref<Song | Album>({});
 
-    function openOverlay(obj: any) {
+    function openOverlay(obj: any, inPlaylistOption: boolean = false) {
         objData.value = obj;
         isOptionsOpen.value = true;
+        inPlaylist.value = inPlaylistOption;
     }
 
     function closeOverlay() {
@@ -38,6 +42,15 @@ export const useOverlayStore = defineStore('overlay', () => {
         isPlaylistOpen.value = false;
     }
 
+    function openAdd(){
+        isAddOpen.value = true;
+    }
+
+    function closeAdd(){
+        objData.value = {};
+        isAddOpen.value = false;
+    }
+
     return {
         openOverlay,
         closeOverlay,
@@ -49,6 +62,10 @@ export const useOverlayStore = defineStore('overlay', () => {
         editingPlaylist,
         isPlaylistOpen,
         openPlaylist,
-        closePlaylist
+        closePlaylist,
+        openAdd,
+        closeAdd,
+        isAddOpen,
+        inPlaylist
     };
 })

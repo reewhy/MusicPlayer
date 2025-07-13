@@ -236,6 +236,7 @@ onLongPress(
             :result="item"
             :image="item?.images?.large"
             class="transform hover:scale-105 transition-transform duration-200"
+            :in-playlist="true"
         />
       </div>
     </div>

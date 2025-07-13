@@ -59,7 +59,7 @@ function createDabManager() {
 
             if(Capacitor.isNativePlatform()){
                 const pathResult = await Filesystem.getUri({
-                    path: `songs/${song.title} - ${song.artist}.flac`,
+                    path: `songs/${song.id}.flac`,
                     directory: Directory.Documents
                 })
 

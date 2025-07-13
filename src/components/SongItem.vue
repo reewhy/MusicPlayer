@@ -10,7 +10,8 @@ const overlay = useOverlayStore();
 const props = defineProps({
   result: Object,
   image: String,
-  compact: Boolean
+  compact: Boolean,
+  inPlaylist: Boolean
 })
 
 
@@ -56,7 +57,7 @@ const longPressHook = shallowRef(false)
 
 function onLongPressCallbackHook() {
   longPressHook.value = true;
-  overlay.openOverlay(props.result!);
+  overlay.openOverlay(props.result!, props.inPlaylist || false);
 }
 
 onLongPress(

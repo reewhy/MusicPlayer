@@ -11,19 +11,33 @@ const db = ref<SQLiteDBConnection | null>(null)
 function createDatabase() {
     const openDB = async () => {
         try {
+            if (db.value) {
+                console.log("Database connection already exists.");
+                return;
+            }
+
+            try {
+                // Try to close any existing connection
+                await sqlite.closeConnection("goon_db", false);
+            } catch (closeError) {
+                // Connection might not exist, ignore error
+            }
+
             db.value = await sqlite.createConnection(
                 "goon_db",
                 false,
                 "no-encryption",
                 1,
                 false
-            )
-            await db.value.open()
-            console.log("Database opened!")
+            );
+
+            await db.value.open();
+            console.log("Database opened!");
         } catch (e) {
-            console.error(e)
+            console.error(e);
         }
-    }
+    };
+
 
     const createTable = async () => {
         if (!db.value) return
@@ -281,7 +295,7 @@ function createDatabase() {
             const res = await db.value.query("SELECT * FROM playlists;");
             const playlists = res.values ?? [];
 
-            console.log("Playlists found:", JSON.stringify(playlists));
+            console.log("Playlists found:", JSON.stringify(playlists, null, 2));
 
             const result: Playlist[] = await Promise.all(
                 playlists.map(async (playlist) => {
@@ -372,6 +386,60 @@ function createDatabase() {
             return true
         } catch (error) {
             console.error(`Failed to like track ${track.id}:`, error)
+            return false
+        }
+    }
+
+    const addToPlaylist = async (track: Song, playlist: Playlist): Promise<boolean> => {
+        if (!db.value) return false;
+        if (!await insertTrack(track)) return false;
+
+        console.log("Insert song")
+
+        const statement = `
+            INSERT INTO playlists_tracks(playlist, track)
+            VALUES (?, ?);
+        `;
+
+        const values = [
+            playlist.id,
+            track.id,
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            console.log(`Track ${track.id} added to ${playlist.id}!`)
+            return true
+        } catch (error) {
+            console.error(`Failed to add track ${track.id} into ${playlist.id}:`, error)
+            return false
+        }
+    }
+
+    const removeFromPlaylist = async (track: Song | string, playlist: Playlist | number): Promise<boolean> => {
+        if(!db.value) return false;
+        if(!await insertTrack(track)) return false;
+
+        const trackId = typeof(track) === "object" ? track.id : track
+        const playlistId = typeof(playlist) === "object" ? playlist.id : playlist
+
+        console.log("Insert song")
+
+        const statement = `
+            DELETE FROM playlists_tracks WHERE playlist=? AND track=?;
+        `;
+
+        const values = [
+            playlistId,
+            trackId,
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            console.log(`Track ${trackId} removed from ${playlistId}!`)
+            return true
+        } catch (error) {
+            console.error(`Failed to remove track ${trackId} from ${playlistId}:`, error)
             return false
         }
     }
@@ -467,7 +535,9 @@ function createDatabase() {
         fetchPlaylistTracks,
         createPlaylist,
         updatePlaylistName,
-        deletePlaylist
+        deletePlaylist,
+        addToPlaylist,
+        removeFromPlaylist
     }
 }
 

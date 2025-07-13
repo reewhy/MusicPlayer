@@ -3,6 +3,7 @@ import { useOverlayStore } from "@/stores/overlayStore";
 import { useDatabase } from "@/composables/useDatabase";
 import {ref, nextTick, watch} from "vue";
 import { useConfirm } from "@/composables/useConfirm";
+import { reloadPage } from '@/utils/reloadPage';
 
 const {
   confirmSave
@@ -44,6 +45,7 @@ const createNewPlaylist = async () => {
     console.error("Error creating playlist:", error);
   } finally {
     isCreating.value = false;
+    reloadPage();
   }
 }
 

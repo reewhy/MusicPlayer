@@ -2,6 +2,7 @@
 import { useOverlayStore } from "@/stores/overlayStore";
 import { useConfirm } from "@/composables/useConfirm";
 import { useDatabase } from "@/composables/useDatabase";
+import { reloadPage } from '@/utils/reloadPage';
 
 const {
   confirmDelete
@@ -33,8 +34,11 @@ const deleteOpenPlaylist = async () => {
   const confirmed = await confirmDelete(`playlist "${overlay.editingPlaylist.name}"`);
   if (confirmed) {
     await deletePlaylist(overlay.editingPlaylist.id);
-    overlay.closePlaylist()
     overlay.closeOver()
+    overlay.editingPlaylist = null;
+    overlay.closePlaylist()
+
+    reloadPage();
   }
 }
 </script>
