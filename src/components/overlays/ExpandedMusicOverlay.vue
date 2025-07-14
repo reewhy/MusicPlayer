@@ -11,7 +11,7 @@ import { reloadPage } from "@/utils/reloadPage";
 const {
   likeSong,
   unlikeSong,
-    checkIfTrackLiked
+  checkIfTrackLiked
 } = useDatabase();
 
 const overlay = useOverlayStore();
@@ -47,8 +47,8 @@ const isLiked = ref(false);
 const shuffle = ref(false);
 const repeat = ref<'none' | 'one' | 'all'>('none');
 
-// Update state periodically
-const updateState = () => {
+// Update state periodically with real data from music manager
+const updateState = async () => {
   const state = musicManager.getState();
   currentSong.value = state.currentSong;
   isPlaying.value = state.isPlaying;
@@ -56,9 +56,24 @@ const updateState = () => {
   shuffle.value = state.shuffle;
   repeat.value = state.repeat;
 
-  // Mock current time update - you'll need to get this from your audio system
-  if (isPlaying.value && currentTime.value < duration.value) {
-    currentTime.value += 1;
+  // Get real duration and current time from audio player
+  if (currentSong.value) {
+    try {
+      const realDuration = await musicManager.getDuration();
+      const realCurrentTime = await musicManager.getCurrentTime();
+
+      if (realDuration > 0) {
+        duration.value = realDuration;
+      }
+
+      currentTime.value = realCurrentTime;
+
+      // Update playing state from actual audio player
+      const actuallyPlaying = await musicManager.checkIsPlaying();
+      isPlaying.value = actuallyPlaying;
+    } catch (error) {
+      console.error('Error updating player state:', error);
+    }
   }
 };
 
@@ -93,7 +108,7 @@ const repeatColor = computed(() => {
 // Helper functions
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
@@ -104,17 +119,17 @@ const togglePlayPause = async () => {
   } else {
     await musicManager.resumeSong();
   }
-  updateState();
+  await updateState();
 };
 
 const playNext = async () => {
   await musicManager.playNext();
-  updateState();
+  await updateState();
 };
 
 const playPrevious = async () => {
   await musicManager.playPrevious();
-  updateState();
+  await updateState();
 };
 
 const toggleShuffle = () => {
@@ -130,44 +145,68 @@ const toggleRepeat = () => {
   updateState();
 };
 
-const toggleMute = () => {
-  isMuted.value = !isMuted.value;
+const toggleMute = async () => {
+  if (isMuted.value) {
+    // Unmute - restore previous volume
+    await musicManager.setVolume(volume.value / 100);
+    isMuted.value = false;
+  } else {
+    // Mute - set volume to 0
+    await musicManager.setVolume(0);
+    isMuted.value = true;
+  }
 };
 
 const toggleLike = async () => {
   isLiked.value = !isLiked.value;
-  // Here you would typically save to favorites
   isLiked.value ? await likeSong(overlay.objData) : await unlikeSong(overlay.objData)
 };
 
-const seekTo = (event: MouseEvent) => {
+const seekTo = async (event: MouseEvent) => {
   const progressBar = event.currentTarget as HTMLElement;
   const rect = progressBar.getBoundingClientRect();
   const clickX = event.clientX - rect.left;
   const percentage = (clickX / rect.width) * 100;
   const newTime = (percentage / 100) * duration.value;
-  currentTime.value = Math.floor(newTime);
-  // Here you would typically seek in your audio system
+
+  // Actually seek in the audio player
+  await musicManager.seekTo(newTime);
+  currentTime.value = newTime;
 };
 
-const setVolume = (event: MouseEvent) => {
+const setVolume = async (event: MouseEvent) => {
   const volumeBar = event.currentTarget as HTMLElement;
   const rect = volumeBar.getBoundingClientRect();
   const clickX = event.clientX - rect.left;
   const percentage = (clickX / rect.width) * 100;
-  volume.value = Math.max(0, Math.min(100, percentage));
-  isMuted.value = volume.value === 0;
+  const newVolume = Math.max(0, Math.min(100, percentage));
+
+  volume.value = newVolume;
+  isMuted.value = newVolume === 0;
+
+  // Actually set volume in the audio player
+  await musicManager.setVolume(newVolume / 100);
+};
+
+// Playback rate control
+const playbackRate = ref(1);
+const setPlaybackRate = async (rate: number) => {
+  playbackRate.value = rate;
+  await musicManager.setRate(rate);
+};
+
+// Stop playback
+const stopPlayback = async () => {
+  await musicManager.stopSong();
+  await updateState();
 };
 
 // Initialize and cleanup
 let stateInterval: NodeJS.Timeout;
 
-onMounted(() => {
-  updateState();
+onMounted(async () => {
+  await updateState();
   stateInterval = setInterval(updateState, 1000);
-
-  // Mock duration
-  duration.value = currentSong.value?.duration || 180;
 });
 
 onUnmounted(() => {
@@ -177,14 +216,27 @@ onUnmounted(() => {
 });
 
 // Watch for song changes
-watch(currentSong,  (newSong) => {
+watch(currentSong, async (newSong) => {
   if (newSong) {
-    duration.value = newSong.duration || 180;
-    currentTime.value = 0;
-    const trackExists = checkIfTrackLiked(overlay.objData)
-    console.log('Track is liked:', trackExists)
+    // Get real duration from the audio player
+    try {
+      const realDuration = await musicManager.getDuration();
+      duration.value = realDuration > 0 ? realDuration : (newSong.duration || 180);
+    } catch (error) {
+      duration.value = newSong.duration || 180;
+    }
 
-    isLiked.value = trackExists
+    currentTime.value = 0;
+    const trackExists = checkIfTrackLiked(overlay.objData);
+    console.log('Track is liked:', trackExists);
+    isLiked.value = trackExists;
+  }
+});
+
+// Watch for volume changes to update mute state
+watch(volume, async (newVolume) => {
+  if (newVolume > 0 && isMuted.value) {
+    isMuted.value = false;
   }
 });
 </script>
@@ -215,9 +267,20 @@ watch(currentSong,  (newSong) => {
           <p class="text-sm font-medium">{{ currentSong.albumTitle || 'Unknown Album' }}</p>
         </div>
 
-        <button class="p-2 rounded-full hover:bg-slate-700/50 transition-colors" @click="overlay.openOverlay(currentSong)">
-          <OhVueIcon name="io-ellipsis-horizontal-sharp" class="w-6 h-6 text-white"  />
-        </button>
+        <div class="flex items-center space-x-2">
+          <!-- Stop button -->
+          <button
+              @click="stopPlayback"
+              class="p-2 rounded-full hover:bg-slate-700/50 transition-colors"
+              title="Stop"
+          >
+            <OhVueIcon name="md-stop" class="w-5 h-5 text-slate-400" />
+          </button>
+
+          <button class="p-2 rounded-full hover:bg-slate-700/50 transition-colors" @click="overlay.openOverlay(currentSong)">
+            <OhVueIcon name="io-ellipsis-horizontal-sharp" class="w-6 h-6 text-white"  />
+          </button>
+        </div>
       </div>
 
       <!-- Album Art -->
@@ -230,6 +293,11 @@ watch(currentSong,  (newSong) => {
           />
           <div v-if="isLoading" class="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
             <OhVueIcon name="io-refresh-outline" class="w-8 h-8 animate-spin" />
+          </div>
+
+          <!-- Playback rate indicator -->
+          <div v-if="playbackRate !== 1" class="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded-md text-xs">
+            {{ playbackRate }}x
           </div>
         </div>
       </div>
@@ -245,18 +313,13 @@ watch(currentSong,  (newSong) => {
               @click="toggleLike"
               class="p-2 ml-4 rounded-full hover:bg-slate-700/50 transition-colors"
           >
-            <button
-                @click="toggleLike"
-                class="flex items-center gap-4 p-2 rounded-full hover:bg-slate-800/60 transition-colors duration-200 active:bg-slate-700/60"
-            >
-              <div class="w-6 h-6 flex items-center justify-center">
-                <v-icon
-                    :name="isLiked ? 'md-favorite' : 'md-favoriteborder'"
-                    scale="1.1"
-                    :class="isLiked ? 'text-purple-400' : 'text-slate-400'"
-                />
-              </div>
-            </button>
+            <div class="w-6 h-6 flex items-center justify-center">
+              <OhVueIcon
+                  :name="isLiked ? 'md-favorite' : 'md-favoriteborder'"
+                  scale="1.1"
+                  :class="isLiked ? 'text-purple-400' : 'text-slate-400'"
+              />
+            </div>
           </button>
         </div>
       </div>
@@ -287,6 +350,7 @@ watch(currentSong,  (newSong) => {
           <button
               @click="toggleShuffle"
               class="p-2 rounded-full hover:bg-slate-700/50 transition-colors"
+              :title="shuffle ? 'Disable shuffle' : 'Enable shuffle'"
           >
             <OhVueIcon
                 name="bi-shuffle"
@@ -298,6 +362,7 @@ watch(currentSong,  (newSong) => {
           <button
               @click="playPrevious"
               class="p-2 rounded-full hover:bg-slate-700/50 transition-colors"
+              title="Previous track"
           >
             <OhVueIcon name="md-skipprevious-round" class="w-8 h-8" />
           </button>
@@ -307,6 +372,7 @@ watch(currentSong,  (newSong) => {
               @click="togglePlayPause"
               :disabled="isLoading"
               class="p-4 bg-white text-black rounded-full hover:scale-105 transition-all duration-200 disabled:opacity-50"
+              :title="isPlaying ? 'Pause' : 'Play'"
           >
             <OhVueIcon
                 v-if="isLoading"
@@ -329,6 +395,7 @@ watch(currentSong,  (newSong) => {
           <button
               @click="playNext"
               class="p-2 rounded-full hover:bg-slate-700/50 transition-colors"
+              title="Next track"
           >
             <OhVueIcon name="md-skipnext-round" class="w-8 h-8" />
           </button>
@@ -337,6 +404,7 @@ watch(currentSong,  (newSong) => {
           <button
               @click="toggleRepeat"
               class="p-2 rounded-full hover:bg-slate-700/50 transition-colors relative"
+              :title="repeat === 'none' ? 'Enable repeat' : repeat === 'all' ? 'Repeat all' : 'Repeat one'"
           >
             <OhVueIcon
                 :name="repeatIcon"
@@ -350,36 +418,59 @@ watch(currentSong,  (newSong) => {
         </div>
       </div>
 
+      <!-- Playback Rate Controls -->
+      <div class="px-8 mb-4">
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-xs text-slate-400">Speed:</span>
+          <button
+              v-for="rate in [0.5, 0.75, 1, 1.25, 1.5, 2]"
+              :key="rate"
+              @click="setPlaybackRate(rate)"
+              :class="[
+              'px-2 py-1 rounded text-xs transition-colors',
+              playbackRate === rate
+                ? 'bg-purple-500 text-white'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            ]"
+          >
+            {{ rate }}x
+          </button>
+        </div>
+      </div>
+
       <!-- Bottom Controls -->
       <div class="px-8">
         <div class="flex items-center justify-between">
           <!-- Volume -->
           <div class="flex items-center space-x-3 flex-1">
-            <button @click="toggleMute" class="p-1">
+            <button @click="toggleMute" class="p-1" title="Toggle mute">
               <OhVueIcon
-                  :name="isMuted || volume === 0 ? 'md-volumeoff' : 'md-volumeup'"
+                  :name="isMuted || volume === 0 ? 'md-volumeoff' : volume < 50 ? 'md-volumedown' : 'md-volumeup'"
                   class="w-5 h-5 text-slate-400"
               />
             </button>
             <div
                 class="w-20 h-1 bg-slate-600 rounded-full cursor-pointer"
                 @click="setVolume"
+                title="Volume control"
             >
               <div
                   class="h-full bg-white rounded-full transition-all duration-300"
                   :style="{ width: `${isMuted ? 0 : volume}%` }"
               ></div>
             </div>
+            <span class="text-xs text-slate-400 w-8">{{ Math.round(isMuted ? 0 : volume) }}%</span>
           </div>
 
           <!-- Additional Controls -->
           <div class="flex items-center space-x-4">
-            <button class="p-2 rounded-full hover:bg-slate-700/50 transition-colors">
+            <button class="p-2 rounded-full hover:bg-slate-700/50 transition-colors" title="Add to playlist">
               <OhVueIcon name="md-add" class="w-5 h-5 text-slate-400" />
             </button>
             <button
                 @click="emit('openQueue')"
                 class="p-2 rounded-full hover:bg-slate-700/50 transition-colors"
+                title="Show queue"
             >
               <OhVueIcon name="md-list" class="w-5 h-5 text-slate-400" />
             </button>

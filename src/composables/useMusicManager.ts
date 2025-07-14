@@ -1,5 +1,5 @@
 import { Song } from "@/types/common";
-import { NativeAudio } from '@capacitor-community/native-audio';
+import { AudioPlayer } from "@mediagrid/capacitor-native-audio";
 import { getFilePath } from "@/utils/getFilePath";
 import { isDownloaded } from "@/utils/isDownloaded";
 import { useDabManager } from "@/composables/useDabManager";
@@ -14,6 +14,7 @@ interface MusicState {
     shuffle: boolean;
     repeat: 'none' | 'one' | 'all';
     originalQueue: Song[]; // For shuffle functionality
+    firstSong: boolean;
 }
 
 let state: ReturnType<typeof createMusicManager> | null = null;
@@ -29,73 +30,140 @@ function createMusicManager() {
         isLoading: false,
         shuffle: false,
         repeat: 'none',
-        originalQueue: []
+        originalQueue: [],
+        firstSong: true
     };
 
     const loadSong = async (song: Song): Promise<boolean> => {
         try {
-            // Unload previous song if exists
+            // Destroy previous song if exists
             if (musicState.currentSong && musicState.currentSong.id !== song.id) {
-                await NativeAudio.unload({ assetId: musicState.currentSong.id });
+                console.log("Destroying song: ", JSON.stringify(musicState.currentSong));
+                try {
+                    await AudioPlayer.destroy({ audioId: musicState.currentSong.id });
+                } catch (error) {
+                    console.warn("Error destroying previous song:", error);
+                }
             }
 
-            const filePath = await getFilePath(song);
+            const filePath = new URL(await getFilePath(song) || '', import.meta.url).href;
+            console.log("Loading song with file path:", filePath);
 
-            await NativeAudio.preload({
-                assetId: song.id,
-                assetPath: filePath,
-                isUrl: true,
-                audioChannelNum: 1
-            });
+            console.log("Is first song? ", musicState.firstSong);
+            // Create the audio source with proper error handling
+            await AudioPlayer.create({
+                    audioSource: filePath,
+                    audioId: song.id || 0,
+                    friendlyTitle: song.title || 'Unknown Title',
+                    artistName: song.artist || 'Unknown Artist',
+                    albumTitle: song.albumTitle || 'Unknown Album',
+                    artworkSource: song.images?.large || undefined,
+                    useForNotification: musicState.firstSong,
+                    isBackgroundMusic: false,
+                    loop: false
+                }).catch(err => console.error("Error while creating audio: ", err))
 
+            // Check if createResult is valid
+            // if (!createResult || typeof createResult !== 'object') {
+            //     console.error("Invalid response from AudioPlayer.create:", createResult);
+            //     return false;
+            // }
+            //
+            // // Handle different response formats
+            // if (createResult.success === false) {
+            //     console.error("Failed to create audio source:", createResult);
+            //     return false;
+            // }
+            //
+            // // If no explicit success property, assume success if no error was thrown
+            // if (createResult.success === undefined) {
+            //     console.log("AudioPlayer.create completed without explicit success flag");
+            // }
+
+            // Initialize the audio source
+            await AudioPlayer.onAudioReady({audioId: song.id},  () => {
+                console.log("AudioReady");
+            })
+
+            try {
+                AudioPlayer.initialize({audioId: song.id});
+            } catch (error) {
+                console.error("Error initializing audio source:", error);
+                return false;
+            }
+
+
+            console.log("Song loaded successfully:", song.title);
             return true;
         } catch (error) {
-            console.error("Error while preloading: ", error);
+            console.error("Error while loading song:", error);
             return false;
         }
     };
 
     const downloadIfNeeded = async (song: Song, callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         try {
-            if (!(await isDownloaded(song))) {
+            const downloaded = await isDownloaded(song);
+            if (!downloaded) {
+                console.log("Song not downloaded, downloading:", song.title);
                 if (callback) {
                     await downloadSong(song, callback);
                 } else {
                     await downloadSong(song, () => {});
                 }
+            } else {
+                console.log("Song already downloaded:", song.title);
             }
             return true;
         } catch (error) {
-            console.error("Error while downloading: ", error);
+            console.error("Error while downloading:", error);
             return false;
         }
     };
 
     const playSong = async (song: Song, callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         try {
+            console.log("Playing song:", song.title);
             musicState.isLoading = true;
 
             // Download if needed
             const downloadSuccess = await downloadIfNeeded(song, callback);
             if (!downloadSuccess) {
-                musicState.isLoading = false;
-                return false;
-            }
-
-            // Load the song
-            const loadSuccess = await loadSong(song);
-            if (!loadSuccess) {
+                console.error("Failed to download song");
                 musicState.isLoading = false;
                 return false;
             }
 
             // Stop current song if playing
-            if (musicState.isPlaying && musicState.currentSong) {
-                await NativeAudio.stop({ assetId: musicState.currentSong.id });
+            // if (musicState.isPlaying && musicState.currentSong) {
+            //     console.log("Stopping previous song")
+            //     await AudioPlayer.stop({ audioId: musicState.currentSong.id });
+            // }
+
+            // Load the new song
+            const loadSuccess = await loadSong(song);
+            if (!loadSuccess) {
+                console.error("Failed to load song");
+                musicState.isLoading = false;
+                return false;
             }
 
             // Play the song
-            await NativeAudio.play({ assetId: song.id });
+            try {
+                if(musicState.firstSong){
+                    musicState.firstSong = false;
+                    await AudioPlayer.play({ audioId: song.id });
+                }
+                else{
+                    await AudioPlayer.changeAudioSource({audioId: song.id});
+                    await AudioPlayer.changeMetadata({ audioId: song.id});
+                }
+                console.log("Song started playing:", song.title);
+            } catch (error) {
+                console.error("Error playing song:", error);
+                musicState.isLoading = false;
+                return false;
+            }
 
             musicState.currentSong = song;
             musicState.isPlaying = true;
@@ -103,7 +171,7 @@ function createMusicManager() {
 
             return true;
         } catch (error) {
-            console.error("Error while playing: ", error);
+            console.error("Error while playing:", error);
             musicState.isLoading = false;
             return false;
         }
@@ -112,13 +180,14 @@ function createMusicManager() {
     const pauseSong = async (): Promise<boolean> => {
         try {
             if (musicState.currentSong && musicState.isPlaying) {
-                await NativeAudio.pause({ assetId: musicState.currentSong.id });
+                await AudioPlayer.pause({ audioId: musicState.currentSong.id });
                 musicState.isPlaying = false;
+                console.log("Song paused:", musicState.currentSong.title);
                 return true;
             }
             return false;
         } catch (error) {
-            console.error("Error while pausing: ", error);
+            console.error("Error while pausing:", error);
             return false;
         }
     };
@@ -126,13 +195,14 @@ function createMusicManager() {
     const resumeSong = async (): Promise<boolean> => {
         try {
             if (musicState.currentSong && !musicState.isPlaying) {
-                await NativeAudio.resume({ assetId: musicState.currentSong.id });
+                await AudioPlayer.play({ audioId: musicState.currentSong.id });
                 musicState.isPlaying = true;
+                console.log("Song resumed:", musicState.currentSong.title);
                 return true;
             }
             return false;
         } catch (error) {
-            console.error("Error while resuming: ", error);
+            console.error("Error while resuming:", error);
             return false;
         }
     };
@@ -140,13 +210,104 @@ function createMusicManager() {
     const stopSong = async (): Promise<boolean> => {
         try {
             if (musicState.currentSong) {
-                await NativeAudio.stop({ assetId: musicState.currentSong.id });
+                await AudioPlayer.stop({ audioId: musicState.currentSong.id });
                 musicState.isPlaying = false;
+                console.log("Song stopped:", musicState.currentSong.title);
                 return true;
             }
             return false;
         } catch (error) {
-            console.error("Error while stopping: ", error);
+            console.error("Error while stopping:", error);
+            return false;
+        }
+    };
+
+    const seekTo = async (timeInSeconds: number): Promise<boolean> => {
+        try {
+            if (musicState.currentSong) {
+                await AudioPlayer.seek({
+                    audioId: musicState.currentSong.id,
+                    timeInSeconds
+                });
+                console.log("Seeked to:", timeInSeconds);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error while seeking:", error);
+            return false;
+        }
+    };
+
+    const setVolume = async (volume: number): Promise<boolean> => {
+        try {
+            if (musicState.currentSong) {
+                await AudioPlayer.setVolume({
+                    audioId: musicState.currentSong.id,
+                    volume
+                });
+                console.log("Volume set to:", volume);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error while setting volume:", error);
+            return false;
+        }
+    };
+
+    const setRate = async (rate: number): Promise<boolean> => {
+        try {
+            if (musicState.currentSong) {
+                await AudioPlayer.setRate({
+                    audioId: musicState.currentSong.id,
+                    rate
+                });
+                console.log("Rate set to:", rate);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error while setting rate:", error);
+            return false;
+        }
+    };
+
+    const getDuration = async (): Promise<number> => {
+        try {
+            if (musicState.currentSong) {
+                const result = await AudioPlayer.getDuration({ audioId: musicState.currentSong.id });
+                return result?.duration || 0;
+            }
+            return 0;
+        } catch (error) {
+            console.error("Error while getting duration:", error);
+            return 0;
+        }
+    };
+
+    const getCurrentTime = async (): Promise<number> => {
+        try {
+            if (musicState.currentSong) {
+                const result = await AudioPlayer.getCurrentTime({ audioId: musicState.currentSong.id });
+                return result?.currentTime || 0;
+            }
+            return 0;
+        } catch (error) {
+            console.error("Error while getting current time:", error);
+            return 0;
+        }
+    };
+
+    const checkIsPlaying = async (): Promise<boolean> => {
+        try {
+            if (musicState.currentSong) {
+                const result = await AudioPlayer.isPlaying({ audioId: musicState.currentSong.id });
+                return result?.isPlaying || false;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error while checking if playing:", error);
             return false;
         }
     };
@@ -160,6 +321,8 @@ function createMusicManager() {
         if (musicState.shuffle) {
             shuffleQueue();
         }
+
+        console.log("Queue set with", songs.length, "songs, starting at index", startIndex);
     };
 
     const addToQueue = (song: Song, position?: number) => {
@@ -173,12 +336,15 @@ function createMusicManager() {
             musicState.queue.push(song);
             musicState.originalQueue.push(song);
         }
+        console.log("Added to queue:", song.title);
     };
 
-    const removeFromQueue = (index: number) => {
+    const removeFromQueue = async (index: number) => {
         if (index >= 0 && index < musicState.queue.length) {
+            const removedSong = musicState.queue[index];
             musicState.queue.splice(index, 1);
-            const originalIndex = musicState.originalQueue.findIndex(s => s.id === musicState.queue[index]?.id);
+
+            const originalIndex = musicState.originalQueue.findIndex(s => s.id === removedSong.id);
             if (originalIndex !== -1) {
                 musicState.originalQueue.splice(originalIndex, 1);
             }
@@ -187,9 +353,11 @@ function createMusicManager() {
                 musicState.currentIndex--;
             } else if (index === musicState.currentIndex) {
                 // If current song is removed, stop playing
-                stopSong();
+                await stopSong();
                 musicState.currentSong = null;
             }
+
+            console.log("Removed from queue:", removedSong.title);
         }
     };
 
@@ -199,6 +367,7 @@ function createMusicManager() {
         musicState.originalQueue = [];
         musicState.currentIndex = -1;
         musicState.currentSong = null;
+        console.log("Queue cleared");
     };
 
     const shuffleQueue = () => {
@@ -219,6 +388,8 @@ function createMusicManager() {
         } else {
             musicState.queue = otherSongs;
         }
+
+        console.log("Queue shuffled");
     };
 
     const toggleShuffle = () => {
@@ -233,14 +404,20 @@ function createMusicManager() {
                 musicState.currentIndex = musicState.queue.findIndex(s => s.id === musicState.currentSong!.id);
             }
         }
+
+        console.log("Shuffle toggled:", musicState.shuffle);
     };
 
     const setRepeat = (mode: 'none' | 'one' | 'all') => {
         musicState.repeat = mode;
+        console.log("Repeat mode set to:", mode);
     };
 
     const playNext = async (callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
-        if (musicState.queue.length === 0) return false;
+        if (musicState.queue.length === 0) {
+            console.log("No songs in queue");
+            return false;
+        }
 
         let nextIndex = musicState.currentIndex + 1;
 
@@ -248,6 +425,7 @@ function createMusicManager() {
             if (musicState.repeat === 'all') {
                 nextIndex = 0;
             } else {
+                console.log("End of queue reached");
                 return false;
             }
         }
@@ -256,6 +434,7 @@ function createMusicManager() {
         const nextSong = musicState.queue[nextIndex];
 
         if (nextSong) {
+            console.log("Playing next song:", nextSong.title);
             return await playSong(nextSong, callback);
         }
 
@@ -263,7 +442,10 @@ function createMusicManager() {
     };
 
     const playPrevious = async (callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
-        if (musicState.queue.length === 0) return false;
+        if (musicState.queue.length === 0) {
+            console.log("No songs in queue");
+            return false;
+        }
 
         let prevIndex = musicState.currentIndex - 1;
 
@@ -271,6 +453,7 @@ function createMusicManager() {
             if (musicState.repeat === 'all') {
                 prevIndex = musicState.queue.length - 1;
             } else {
+                console.log("Beginning of queue reached");
                 return false;
             }
         }
@@ -279,6 +462,7 @@ function createMusicManager() {
         const prevSong = musicState.queue[prevIndex];
 
         if (prevSong) {
+            console.log("Playing previous song:", prevSong.title);
             return await playSong(prevSong, callback);
         }
 
@@ -289,6 +473,7 @@ function createMusicManager() {
         if (index >= 0 && index < musicState.queue.length) {
             musicState.currentIndex = index;
             const song = musicState.queue[index];
+            console.log("Playing from queue at index", index, ":", song.title);
             return await playSong(song, callback);
         }
         return false;
@@ -304,23 +489,46 @@ function createMusicManager() {
 
     const isLoading = () => musicState.isLoading;
 
-    // Handle song completion
-    NativeAudio.addListener('complete', async (event: { assetId: string }) => {
-        await NativeAudio.unload({ assetId: event.assetId });
+    // Set up event listeners with better error handling
+    const setupEventListeners = () => {
+        try {
+            // Listen for when audio is ready
+            AudioPlayer.onAudioReady({ audioId: 'default' }, () => {
+                console.log('Audio is ready');
+            });
 
-        if (musicState.repeat === 'one' && musicState.currentSong) {
-            // Replay the same song
-            await playSong(musicState.currentSong);
-        } else {
-            // Play next song
-            const success = await playNext();
-            if (!success) {
-                // End of queue reached
-                musicState.isPlaying = false;
-                musicState.currentSong = null;
-            }
+            // Listen for when audio ends
+            AudioPlayer.onAudioEnd({ audioId: 'default' }, async () => {
+                console.log('Audio ended');
+
+                if (musicState.repeat === 'one' && musicState.currentSong) {
+                    // Replay the same song
+                    console.log("Repeating current song");
+                    await playSong(musicState.currentSong);
+                } else {
+                    // Play next song
+                    const success = await playNext();
+                    if (!success) {
+                        // End of queue reached
+                        console.log("Playback ended - no more songs");
+                        musicState.isPlaying = false;
+                        musicState.currentSong = null;
+                    }
+                }
+            });
+
+            // Listen for playback status changes (from external controls)
+            AudioPlayer.onPlaybackStatusChange({ audioId: 'default' }, (result) => {
+                console.log('Playback status changed:', result.status);
+                musicState.isPlaying = result.status === 'playing';
+            });
+        } catch (error) {
+            console.error("Error setting up event listeners:", error);
         }
-    });
+    };
+
+    // Initialize event listeners
+    setupEventListeners();
 
     return {
         // Playback controls
@@ -328,6 +536,14 @@ function createMusicManager() {
         pauseSong,
         resumeSong,
         stopSong,
+        seekTo,
+        setVolume,
+        setRate,
+
+        // Info getters
+        getDuration,
+        getCurrentTime,
+        checkIsPlaying,
 
         // Queue management
         setQueue,

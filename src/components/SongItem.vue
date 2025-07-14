@@ -20,10 +20,6 @@ const props = defineProps({
   inPlaylist: Boolean
 })
 
-const {
-  downloadSong
-} = useDabManager();
-
 const downloadProgress = ref(0);
 const isDownloading = ref(false);
 const isDownloaded = ref(false);
