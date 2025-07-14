@@ -5,6 +5,7 @@ import { useDatabase } from "@/composables/useDatabase";
 import { useRoute } from "vue-router";
 import { reloadPage } from '@/utils/reloadPage';
 
+// Setups
 const route = useRoute();
 
 const {
@@ -20,7 +21,7 @@ const props = defineProps({
   enabled: Boolean
 })
 
-// Example state
+// Liked state
 const isLiked = ref(false)
 
 watch(() => overlay.isOpen, async () => {
@@ -30,7 +31,7 @@ watch(() => overlay.isOpen, async () => {
   isLiked.value = trackExists
 })
 
-// Example functions (non-functional)
+// Functions
 const toggleLike = async () => {
   isLiked.value = !isLiked.value
 
@@ -41,15 +42,18 @@ const toggleLike = async () => {
   console.log('Like toggled:', isLiked.value)
 }
 
+// To implement xd
 const shareTrack = () => {
   console.log('Share track')
   overlay.closeOverlay()
 }
 
+// Open overlay with playlist selection
 const addToPlaylist = () => {
   overlay.openAdd()
 }
 
+// Remove track from playlist
 const removeFromThePlaylist = async () => {
   if(overlay.objData.id !== undefined){
     await removeFromPlaylist(overlay.objData.id, parseInt(route.params.id))
@@ -58,20 +62,25 @@ const removeFromThePlaylist = async () => {
   overlay.closeOverlay()
 }
 
+// To implement
 const addToQueue = () => {
   console.log('Add to queue')
   overlay.closeOverlay()
 }
 
+// To implement
 const goToArtist = () => {
   console.log('Go to artist')
   overlay.closeOverlay()
 }
 
+// To implement
 const goToAlbum = () => {
   console.log('Go to artist')
   overlay.closeOverlay()
 }
+
+// To implement (you already have the function dumbass)
 const downloadTrack = () => {
   console.log('Download track')
   overlay.closeOverlay()
@@ -89,7 +98,7 @@ const closeOverlay = (event: Event) => {
   <Transition name="overlay">
     <main
         v-show="props.enabled"
-        class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+        class="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm"
         @click="closeOverlay"
     >
       <Transition name="slide-up">
@@ -180,18 +189,7 @@ const closeOverlay = (event: Event) => {
               </div>
               <span class="text-white text-base font-medium">Remove from playlist</span>
             </button>
-
-            <!-- Hide from playlist -->
-            <!--            <button-->
-            <!--                @click="hideFromPlaylist"-->
-            <!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
-            <!--            >-->
-            <!--              <div class="w-6 h-6 flex items-center justify-center">-->
-            <!--                <v-icon name="md-visibilityoff" scale="1.1" class="text-slate-400" />-->
-            <!--              </div>-->
-            <!--              <span class="text-white text-base font-medium">Nascondi da questa playlist</span>-->
-            <!--            </button>-->
-
+            
             <!-- Add to queue -->
             <button
                 @click="addToQueue"
@@ -214,6 +212,7 @@ const closeOverlay = (event: Event) => {
               <span class="text-white text-base font-medium">Go to artist</span>
             </button>
 
+            <!-- Go to album -->
             <button
                 @click="goToAlbum"
                 class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"
@@ -223,28 +222,6 @@ const closeOverlay = (event: Event) => {
               </div>
               <span class="text-white text-base font-medium">Go to album</span>
             </button>
-
-            <!-- Start a Jam -->
-            <!--            <button-->
-            <!--                @click="startJam"-->
-            <!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
-            <!--            >-->
-            <!--              <div class="w-6 h-6 flex items-center justify-center">-->
-            <!--                <v-icon name="md-headphones" scale="1.1" class="text-slate-400" />-->
-            <!--              </div>-->
-            <!--              <span class="text-white text-base font-medium">Avvia una Jam</span>-->
-            <!--            </button>-->
-
-            <!-- Start radio -->
-            <!--            <button-->
-            <!--                @click="startRadio"-->
-            <!--                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"-->
-            <!--            >-->
-            <!--              <div class="w-6 h-6 flex items-center justify-center">-->
-            <!--                <v-icon name="md-radio" scale="1.1" class="text-slate-400" />-->
-            <!--              </div>-->
-            <!--              <span class="text-white text-base font-medium">Vai a Radio dal brano</span>-->
-            <!--            </button>-->
 
             <!-- Download -->
             <button

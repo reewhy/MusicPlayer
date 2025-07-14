@@ -5,6 +5,7 @@ import {ref, nextTick, watch} from "vue";
 import { useConfirm } from "@/composables/useConfirm";
 import { reloadPage } from '@/utils/reloadPage';
 
+// Setups
 const {
   confirmSave
 } = useConfirm();
@@ -23,22 +24,27 @@ const playlistName = ref("");
 const isCreating = ref(false);
 const inputRef = ref<HTMLInputElement | null>(null);
 
+// Create or edit function (to-do change the name of the function lazy asshole)
 const createNewPlaylist = async () => {
   if (!playlistName.value.trim()) return;
 
   console.log("Playlist editing: ", JSON.stringify(overlay.editingPlaylist, null, 2));
 
+  // Start loading animation
   isCreating.value = true;
   try {
+    // No playlist editing: Create new playlist
     if(overlay.editingPlaylist === null){
       await createPlaylist(playlistName.value.trim());
     } else {
+      // Playlist editing: Change playlist name
       const confirmed = await confirmSave();
       if (confirmed) {
         await updatePlaylistName(overlay.editingPlaylist.id!, playlistName.value.trim());
       }
       overlay.editingPlaylist = null;
     }
+    // Remove chached infos
     overlay.closeOver();
     playlistName.value = "";
   } catch (error) {
@@ -49,10 +55,12 @@ const createNewPlaylist = async () => {
   }
 }
 
+// I do not remember
 const updatePlaylist = async (name: string) => {
   playlistName.value = name;
 }
 
+// Check if there's a playlist to edit to to to
 watch(() => overlay.editingPlaylist, () => {
   if(overlay.editingPlaylist !== null && overlay.editingPlaylist.name !== undefined) updatePlaylist(overlay.editingPlaylist?.name);
 })

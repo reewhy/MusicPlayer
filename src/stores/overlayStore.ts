@@ -3,15 +3,17 @@ import { ref } from 'vue';
 import {Album, Playlist, Song} from "@/types/common";
 
 export const useOverlayStore = defineStore('overlay', () => {
-    const isOptionsOpen = ref<boolean>(false);
-    const isOverOpen = ref<boolean>(false);
-    const isPlaylistOpen = ref<boolean>(false);
-    const isAddOpen = ref<boolean>(false);
+    // States
+    const isOptionsOpen = ref<boolean>(false);  // Song options
+    const isOverOpen = ref<boolean>(false);     // Playlist editing
+    const isPlaylistOpen = ref<boolean>(false); // Playlist options
+    const isAddOpen = ref<boolean>(false);      // Playlist selection
+    const isMusicOpen = ref<boolean>(false);                         // Music overlay
 
-    const inPlaylist = ref<boolean>(false);
+    const inPlaylist = ref<boolean>(false);     // Check if we're in a playlist rn
 
-    const editingPlaylist = ref<Playlist | null>(null);
-    const objData = ref<Song | Album>({});
+    const editingPlaylist = ref<Playlist | null>(null); // Playlist we're editing
+    const objData = ref<Song | Album>({});              // Song or albums we're working with
 
     function openOverlay(obj: any, inPlaylistOption: boolean = false) {
         objData.value = obj;
@@ -51,6 +53,14 @@ export const useOverlayStore = defineStore('overlay', () => {
         isAddOpen.value = false;
     }
 
+    function openMusic(){
+        isMusicOpen.value = true;
+    }
+
+    function closeMusic(){
+        isMusicOpen.value = false;
+    }
+
     return {
         openOverlay,
         closeOverlay,
@@ -66,6 +76,9 @@ export const useOverlayStore = defineStore('overlay', () => {
         openAdd,
         closeAdd,
         isAddOpen,
-        inPlaylist
+        inPlaylist,
+        isMusicOpen,
+        openMusic,
+        closeMusic,
     };
 })

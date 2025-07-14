@@ -5,7 +5,8 @@ import { createPinia } from 'pinia'
 
 import { OhVueIcon, addIcons } from "oh-vue-icons";
 import {
-  MdHome, MdHomeOutlined,
+  MdHome,
+  MdHomeOutlined,
   MdLibrarymusic,
   MdLibrarymusicOutlined,
   MdSettings,
@@ -28,7 +29,20 @@ import {
   MdQueuemusic,
   MdPerson,
   MdHeadphones,
-  MdRadio, MdAdd, FaEdit, MdDeleteOutlined
+  MdRadio,
+  MdAdd,
+  FaEdit,
+  MdDeleteOutlined,
+  MdPause,
+  MdRefresh,
+  FaChevronDown,
+  IoEllipsisHorizontalSharp,
+  BiShuffle,
+  MdSkippreviousRound,
+  MdSkipnextRound,
+  MdRepeatone,
+  MdRepeat,
+  MdVolumeoff, MdVolumeup, MdList
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -54,7 +68,19 @@ addIcons(
     MdRadio,
     MdAdd,
     FaEdit,
-    MdDeleteOutlined
+    MdDeleteOutlined,
+    MdPause,
+    MdRefresh,
+    FaChevronDown,
+    IoEllipsisHorizontalSharp,
+    BiShuffle,
+    MdSkippreviousRound,
+    MdSkipnextRound,
+    MdRepeatone,
+    MdRepeat,
+    MdVolumeoff,
+    MdVolumeup,
+    MdList
 );
 
 import './main.css'

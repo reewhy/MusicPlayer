@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useOverlayStore } from "@/stores/overlayStore";
 import { useDatabase } from "@/composables/useDatabase";
-import {ref, onMounted, watch} from "vue";
+import {ref, watch} from "vue";
 import { useConfirm } from "@/composables/useConfirm";
 import { Playlist, Song } from "@/types/common";
 
+// Setups
 const overlay = useOverlayStore();
 
 const {
@@ -45,7 +46,7 @@ const isSongInPlaylist = (song: Song, playlistId: string): boolean => {
   );
 };
 
-// Get playlists where song already exists - FIXED
+// Get playlists where song already exists
 const getPlaylistsWithSong = (song: Song, selectedPlaylistIds: string[]): Playlist[] => {
   return playlists.value.filter(playlist => {
     if (playlist.id) {
@@ -73,7 +74,7 @@ const loadPlaylistTracks = async (playlistIds: string[]) => {
   await Promise.all(loadPromises);
 };
 
-// NEW: Load tracks when playlist is selected/deselected
+// Load tracks when playlist is selected/deselected
 const togglePlaylist = async (playlistId: string) => {
   if (selectedPlaylists.value.has(playlistId)) {
     selectedPlaylists.value.delete(playlistId);
@@ -93,10 +94,10 @@ const playlistSelected = async () => {
   isCreating.value = true;
 
   try {
-    const track: Song = overlay.objData as Song; // Assuming objData contains the track/song
+    const track: Song = overlay.objData as Song;
     const selectedPlaylistIds = Array.from(selectedPlaylists.value);
 
-    // Load tracks for all selected playlists (in case some weren't loaded yet)
+    // Load tracks for all selected playlists
     await loadPlaylistTracks(selectedPlaylistIds);
 
     // Check for duplicates
@@ -133,22 +134,19 @@ const playlistSelected = async () => {
     const allSuccessful = results.every(result => result === true);
 
     if (allSuccessful) {
-      // Success - close overlay and reset selections
+      // Success: close overlay and reset selections
       selectedPlaylists.value.clear();
       playlistTracks.value.clear(); // Clear cached tracks
       overlay.closeAdd();
       overlay.closeOverlay();
 
-      // Optional: Show success message
       console.log(`Track added to ${selectedPlaylistIds.length} playlist(s) successfully`);
     } else {
       // Some operations failed
       console.error('Some playlist additions failed');
-      // You might want to show an error message to the user
     }
   } catch (error) {
     console.error('Error adding track to playlists:', error);
-    // Handle error - show user feedback
   } finally {
     isCreating.value = false;
   }
@@ -169,7 +167,7 @@ watch(() => overlay.isAddOpen ,async () => {
   }
 });
 
-// NEW: Watch for overlay opening to preload tracks for immediate feedback
+// Watch for overlay opening to preload tracks for immediate feedback
 watch(() => props.enabled, async (newEnabled) => {
   try{
     if (newEnabled && playlists.value.length > 0) {

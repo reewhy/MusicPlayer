@@ -57,6 +57,7 @@ const fetchAlbumData = async (albumId: string) => {
 }
 
 // Format duration from seconds to mm:ss
+// To-Do: put this function in utils
 const formatDuration = (seconds: number | undefined) => {
   if (!seconds) return '';
   const minutes = Math.floor(seconds / 60);

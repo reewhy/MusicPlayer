@@ -1,4 +1,3 @@
-// composables/useConfirm.js
 import { reactive } from 'vue';
 
 // Global state - shared across all instances

@@ -8,21 +8,28 @@ let state: ReturnType<typeof createDatabase> | null = null
 const sqlite = new SQLiteConnection(CapacitorSQLite)
 const db = ref<SQLiteDBConnection | null>(null)
 
+// Rememeber: Guards for playlist 0 (we do not talk about playlist 0)
+
 function createDatabase() {
+    // Open database connection
     const openDB = async () => {
         try {
+            // Check if connection is already open (this doesnt work!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
             if (db.value) {
                 console.log("Database connection already exists.");
                 return;
             }
 
+            // Since the previous function doesn't work, just close and reopen
+            // To-DO, fix that mf
             try {
                 // Try to close any existing connection
                 await sqlite.closeConnection("goon_db", false);
             } catch (closeError) {
-                // Connection might not exist, ignore error
+                console.log(closeError);
             }
 
+            // Connect to database
             db.value = await sqlite.createConnection(
                 "goon_db",
                 false,
@@ -38,7 +45,8 @@ function createDatabase() {
         }
     };
 
-
+    // Create default DBs and playlist
+    // To-Do: Fix everything to make it more performant and ... space-consuming???? Efficient?? IDK
     const createTable = async () => {
         if (!db.value) return
 
@@ -113,6 +121,7 @@ function createDatabase() {
             `
         ]
 
+        // Execute all queries
         for (const query of queries) {
             await db.value.execute(query)
         }
@@ -120,6 +129,7 @@ function createDatabase() {
         console.log("Tables created")
     }
 
+    // Drop all tables for debug
     const dropAllTables = async () => {
         if (!db.value) return;
 
@@ -138,6 +148,7 @@ function createDatabase() {
     };
 
 
+    // Get all tracks (useless)
     const getAllTracks = async () => {
         if (!db.value) return []
         const res = await db.value.query("SELECT * FROM songs;")
@@ -156,6 +167,7 @@ function createDatabase() {
         }))
     }
 
+    // Create a playlist
     const createPlaylist = async (name: string): Promise<boolean> => {
         if(!db.value) return false;
 
@@ -175,6 +187,7 @@ function createDatabase() {
         }
     }
 
+    // Update a playlist name
     const updatePlaylistName = async (id: number, name: string): Promise<boolean> => {
         if(!db.value) return false;
         if(id === null || name === null) return false;
@@ -196,6 +209,7 @@ function createDatabase() {
         }
     }
 
+    // Delete a playlist
     const deletePlaylist = async (id: number): Promise<boolean> => {
         if(!db.value) return false;
         if(id === null || id === 0) return false;
@@ -216,6 +230,7 @@ function createDatabase() {
         }
     }
 
+    // Fetch a playlist
     const fetchPlaylist = async (id: number): Promise<Playlist | null | undefined> => {
         try{
             if (!db.value) return null
@@ -240,6 +255,7 @@ function createDatabase() {
         }
     }
 
+    // Fetch all tracks in a playlist
     const fetchPlaylistTracks = async (id: number): Promise<Song[]> => {
         try {
             console.log("Checking id:", id);
@@ -287,7 +303,7 @@ function createDatabase() {
         }
     };
 
-
+    // Get all user's playlists
     const getAllPlaylists = async (): Promise<Playlist[] | null> => {
         if (!db.value) return null;
 
@@ -317,6 +333,7 @@ function createDatabase() {
         }
     };
 
+    // Get a saved track
     const getTrack = async (song: Song): Promise<Song | null> => {
         try{
             if (!db.value) return null
@@ -330,10 +347,12 @@ function createDatabase() {
         }
     }
 
+    // Check if the track is liked
+    // To-Do: See if it works still
     const checkIfTrackLiked = async (song: Song): Promise<boolean> => {
         try {
             if (!db.value) return false
-            const res = await db.value.query("SELECT COUNT(*) as count FROM playlists_tracks WHERE track = ?;", [song.id])
+            const res = await db.value.query("SELECT COUNT(*) as count FROM playlists_tracks WHERE track = ? AND playlist=0;", [song.id])
 
             console.log("Full response:", JSON.stringify(res, null, 2))
             console.log("res.values:", JSON.stringify(res.values, null, 2))
@@ -353,6 +372,7 @@ function createDatabase() {
         }
     }
 
+    // Remove a track (use this later for garbage collection??? Is this the correct name)
     const removeTrack = async (track: Song) => {
         if(!db.value) return;
 
@@ -365,6 +385,7 @@ function createDatabase() {
         await db.value.run(statement, value)
     }
 
+    // Like a song (yipppieee) (to-do, use AddToPlaylist function instead)
     const likeSong = async (track: Song): Promise<boolean> => {
         if(!db.value) return false;
         if(!await insertTrack(track)) return false;
@@ -390,6 +411,7 @@ function createDatabase() {
         }
     }
 
+    // Add song to a playlist
     const addToPlaylist = async (track: Song, playlist: Playlist): Promise<boolean> => {
         if (!db.value) return false;
         if (!await insertTrack(track)) return false;
@@ -416,6 +438,7 @@ function createDatabase() {
         }
     }
 
+    // Remove a song from a playlist
     const removeFromPlaylist = async (track: Song | string, playlist: Playlist | number): Promise<boolean> => {
         if(!db.value) return false;
         if(!await insertTrack(track)) return false;
@@ -444,6 +467,8 @@ function createDatabase() {
         }
     }
 
+    // Unlike a song
+    // To-Do: Use removeFromAPlaylist function
     const unlikeSong = async (track: Song): Promise<boolean> => {
         if(!db.value) return false;
 
@@ -466,6 +491,8 @@ function createDatabase() {
         }
     }
 
+    // Insert a track
+    // To-Do: Implement isDownloaded
     const insertTrack = async (track: Song): Promise<boolean> => {
         if (!db.value) return false
 

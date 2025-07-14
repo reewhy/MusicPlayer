@@ -4,8 +4,14 @@ import {ref, shallowRef, useTemplateRef} from "vue";
 import {ProgressStatus} from "@capacitor/filesystem";
 import {onLongPress} from "@vueuse/core";
 import { useOverlayStore } from "@/stores/overlayStore";
+import { useMusicManager } from "@/composables/useMusicManager";
 
+// Setups
 const overlay = useOverlayStore();
+
+const {
+  playSong
+} = useMusicManager();
 
 const props = defineProps({
   result: Object,
@@ -13,7 +19,6 @@ const props = defineProps({
   compact: Boolean,
   inPlaylist: Boolean
 })
-
 
 const {
   downloadSong
@@ -23,20 +28,23 @@ const downloadProgress = ref(0);
 const isDownloading = ref(false);
 const isDownloaded = ref(false);
 
+// Check and update download progress
 const callbackProgress = async (progress: ProgressStatus) => {
   if (progress.lengthComputable && progress.contentLength > 0) {
     downloadProgress.value = Math.round((progress.bytes / progress.contentLength) * 100);
   }
 }
 
+// Handle playlist click
 const download = async () => {
+  // To-do: Make isDownloaded work
   if (isDownloading.value || isDownloaded.value) return;
 
   isDownloading.value = true;
   downloadProgress.value = 0;
 
   try {
-    await downloadSong(props.result!, callbackProgress);
+    playSong(props.result!, callbackProgress);
     isDownloaded.value = true;
   } finally {
     isDownloading.value = false;
@@ -55,6 +63,7 @@ const formatDuration = (seconds: number | undefined) => {
 const htmlRefHook = useTemplateRef<HTMLElement>('htmlRefHook')
 const longPressHook = shallowRef(false)
 
+// Handle long press (show song infos)
 function onLongPressCallbackHook() {
   longPressHook.value = true;
   overlay.openOverlay(props.result!, props.inPlaylist || false);

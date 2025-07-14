@@ -2,23 +2,18 @@ import {Album, Song} from "@/types/common";
 import {Capacitor, CapacitorHttp} from "@capacitor/core";
 import {FileTransfer} from "@capacitor/file-transfer";
 import {Directory, Filesystem, ProgressStatus} from "@capacitor/filesystem";
-import { useDatabase } from "@/composables/useDatabase";
+import {getFilePath} from "@/utils/getFilePath";
 
 let state: ReturnType<typeof createDabManager> | null = null;
 
 function createDabManager() {
+    // On mobile use absolute path
+    // On web use Vite proxy
     const ROOT_URL = Capacitor.isNativePlatform()
         ? "https://dab.yeet.su/api"
         : "/api"
 
-    const {
-        insertTrack
-    } = useDatabase();
-
-    // const MUSIC_URL = Capacitor.isNativePlatform()
-    //     ? "https://streaming-qobuz-std.akamaized.net"
-    //     : '/music'
-
+    // Search tracks on API
     async function searchTracks(query: string, offset: number = 0): Promise<Song[] | null> {
         const finalUrl = `${ROOT_URL}/search?q=${encodeURIComponent(query)}&offset=${offset}&type=track`;
         const response = await fetchData(finalUrl);
@@ -27,6 +22,7 @@ function createDabManager() {
         return response.tracks || null;
     }
 
+    // Search albums on API
     async function searchAlbums(query: string, offset: number = 0): Promise<Album[] | null> {
         const finalUrl = `${ROOT_URL}/search?q=${encodeURIComponent(query)}&offset=${offset}&type=album`;
         const response = await fetchData(finalUrl);
@@ -35,18 +31,21 @@ function createDabManager() {
         return response.albums || null;
     }
 
+    // Fetch an album from API
     async function fetchAlbum(albumId: string): Promise<Album> {
         const finalUrl = `${ROOT_URL}/album?albumId=${albumId}`;
         const response = await fetchData(finalUrl);
         return await response.album;
     }
 
+    // Download a song
     async function downloadSong(song: Song, callback: (progress: ProgressStatus) => void): Promise<void> {
         try{
+            // Get all permissions on mobile
             const permission = await Filesystem.checkPermissions()
-
             if(permission.publicStorage != 'granted') await Filesystem.requestPermissions();
 
+            // Add download progress listener
             await FileTransfer.addListener('progress',  (progress) => {
                 callback(progress)
                 const percent = progress.lengthComputable
@@ -56,20 +55,16 @@ function createDabManager() {
             })
 
             let filePath;
-
+            // On mobile: download path
+            // To-Do: change from documents to data
             if(Capacitor.isNativePlatform()){
-                const pathResult = await Filesystem.getUri({
-                    path: `songs/${song.id}.flac`,
-                    directory: Directory.Documents
-                })
-
-                filePath = pathResult.uri
+                filePath = await getFilePath(song)
             }
+            // To-Do: Implement web (electron/tauri)
 
+            // Get url
             const streamUrl = `${ROOT_URL}/stream?trackId=${song.id}&quality=27`;
-
             const finalUrl = await fetchData(streamUrl);
-
             const url = finalUrl.url;
 
             console.log(`Downloading ${url}`)
@@ -77,6 +72,7 @@ function createDabManager() {
 
             let result;
 
+            // Download the file
             if(filePath){
                 console.log('Officially downloading');
                 result = await FileTransfer.downloadFile({
@@ -95,6 +91,7 @@ function createDabManager() {
         }
     }
 
+    // Fetch data using CapacitorHTTP
     async function fetchData(url: string) {
         if (Capacitor.isNativePlatform()) {
             const response = await CapacitorHttp.get({

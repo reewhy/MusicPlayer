@@ -4,13 +4,18 @@ import { onMounted, computed, defineAsyncComponent, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useDatabase } from "@/composables/useDatabase";
 import { useOverlayStore } from "@/stores/overlayStore";
+import { useMusicManager } from "@/composables/useMusicManager";
+import MusicOverlay from "@/components/MusicOverlay.vue";
+import ExpandedMusicOverlay from "@/components/overlays/ExpandedMusicOverlay.vue";
 
 const overlay = useOverlayStore();
+
+const musicManager = useMusicManager();
+
 
 const {
   openDB,
   createTable,
-  dropAllTables
 } = useDatabase();
 
 const route = useRoute();
@@ -176,36 +181,40 @@ onMounted(async () => {
     <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent"></div>
 
     <!-- Navigation content -->
-    <div class="relative z-10 p-4 flex justify-evenly">
-      <router-link
-          to="/"
-          class="nav-item p-3 rounded-2xl text-xs transition-all duration-300 hover:bg-indigo-600/20"
-          :class="isHomeActive ? 'bg-indigo-600/30 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-indigo-300'"
-          aria-label="Home"
-      >
-        <v-icon :name="isHomeActive ? 'md-home' : 'md-home-outlined'" scale="1.4"></v-icon>
-        <span class="font-medium">Home</span>
-      </router-link>
+    <div class="relative z-10 grid grid-cols-1">
+      <MusicOverlay></MusicOverlay>
+      <div class="flex justify-evenly p-4">
+        <router-link
+            to="/"
+            class="nav-item p-3 rounded-2xl text-xs transition-all duration-300 hover:bg-indigo-600/20"
+            :class="isHomeActive ? 'bg-indigo-600/30 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-indigo-300'"
+            aria-label="Home"
+        >
+          <v-icon :name="isHomeActive ? 'md-home' : 'md-home-outlined'" scale="1.4"></v-icon>
+          <span class="font-medium">Home</span>
+        </router-link>
 
-      <router-link
-          to="/library"
-          class="nav-item p-3 rounded-2xl text-xs transition-all duration-300 hover:bg-indigo-600/20"
-          :class="isLibraryActive ? 'bg-indigo-600/30 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-indigo-300'"
-          aria-label="Library"
-      >
-        <v-icon :name="isLibraryActive ? 'md-librarymusic' : 'md-librarymusic-outlined'" scale="1.4"></v-icon>
-        <span class="font-medium">Library</span>
-      </router-link>
+        <router-link
+            to="/library"
+            class="nav-item p-3 rounded-2xl text-xs transition-all duration-300 hover:bg-indigo-600/20"
+            :class="isLibraryActive ? 'bg-indigo-600/30 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-indigo-300'"
+            aria-label="Library"
+        >
+          <v-icon :name="isLibraryActive ? 'md-librarymusic' : 'md-librarymusic-outlined'" scale="1.4"></v-icon>
+          <span class="font-medium">Library</span>
+        </router-link>
 
-      <router-link
-          to="/settings"
-          class="nav-item p-3 rounded-2xl text-xs transition-all duration-300 hover:bg-indigo-600/20"
-          :class="isSettingsActive ? 'bg-indigo-600/30 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-indigo-300'"
-          aria-label="Settings"
-      >
-        <v-icon :name="isSettingsActive ? 'md-settings' : 'md-settings-outlined'" scale="1.4"></v-icon>
-        <span class="font-medium">Settings</span>
-      </router-link>
+        <router-link
+            to="/settings"
+            class="nav-item p-3 rounded-2xl text-xs transition-all duration-300 hover:bg-indigo-600/20"
+            :class="isSettingsActive ? 'bg-indigo-600/30 text-indigo-300 shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-indigo-300'"
+            aria-label="Settings"
+        >
+          <v-icon :name="isSettingsActive ? 'md-settings' : 'md-settings-outlined'" scale="1.4"></v-icon>
+          <span class="font-medium">Settings</span>
+        </router-link>
+      </div>
+
     </div>
   </nav>
 
@@ -223,6 +232,7 @@ onMounted(async () => {
   </Suspense>
 
   <ConfirmDialog/>
+  <ExpandedMusicOverlay :is-visible="overlay.isMusicOpen"></ExpandedMusicOverlay>
 
   <Suspense>
     <AddScreen v-show="overlay.isAddOpen" :enabled="overlay.isAddOpen" />

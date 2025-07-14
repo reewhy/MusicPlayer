@@ -4,6 +4,7 @@ import { useConfirm } from "@/composables/useConfirm";
 import { useDatabase } from "@/composables/useDatabase";
 import { reloadPage } from '@/utils/reloadPage';
 
+// Setups
 const {
   confirmDelete
 } = useConfirm();
@@ -25,11 +26,13 @@ const closeOverlay = (event: Event) => {
   }
 }
 
+// Open overlay to edit playlist
 const editPlaylist = () => {
   overlay.openOver()
   overlay.closePlaylist()
 }
 
+// Delete selected playlist
 const deleteOpenPlaylist = async () => {
   const confirmed = await confirmDelete(`playlist "${overlay.editingPlaylist.name}"`);
   if (confirmed) {

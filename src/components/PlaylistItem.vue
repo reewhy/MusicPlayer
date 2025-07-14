@@ -5,6 +5,7 @@ import {shallowRef, useTemplateRef} from "vue";
 import {onLongPress} from "@vueuse/core";
 import { useOverlayStore } from "@/stores/overlayStore";
 
+// Setup
 const overlay = useOverlayStore();
 const router = useRouter();
 
@@ -15,12 +16,14 @@ const props = defineProps<{
 const htmlRefHook = useTemplateRef<HTMLElement>('htmlRefHook')
 const longPressHook = shallowRef(false)
 
+// If you long press on the div
 function onLongPressCallbackHook() {
   longPressHook.value = true;
   console.log("Opening playlist: ", JSON.stringify(props.result!, null ,2))
   overlay.openPlaylist(props.result!);
 }
 
+// If the div is clicked
 const handleClick = () => {
   if (!longPressHook.value) {
     // Only navigate if it wasn't a long press
@@ -77,7 +80,3 @@ onLongPress(
     </div>
   </div>
 </template>
-
-<style scoped>
-
-</style>
