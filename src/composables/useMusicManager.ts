@@ -57,7 +57,9 @@ function createMusicManager() {
                     artworkSource: song.images?.large || undefined,
                     useForNotification: true,
                     isBackgroundMusic: false,
-                    loop: false
+                    loop: false,
+                    showSeekForward: true,
+                    showSeekBackward: true,
                 }).catch(err => console.error("Error while creating audio: ", err))
 
             // Check if createResult is valid
@@ -505,7 +507,7 @@ function createMusicManager() {
             // Listen for when audio is ready
             AudioPlayer.onAudioReady({ audioId: id }, () => {
                 console.log('Audio is ready');
-                AudioPlayer.changeMetadata({ audioId: id});
+                // AudioPlayer.changeMetadata({ audioId: id});
             });
 
             // Listen for when audio ends
@@ -533,7 +535,7 @@ function createMusicManager() {
             AudioPlayer.onPlaybackStatusChange({ audioId: id }, (result) => {
                 console.log('Playback status changed:', result.status);
                 musicState.isPlaying = result.status === 'playing';
-                AudioPlayer.changeMetadata({ audioId: id});
+                // AudioPlayer.changeMetadata({ audioId: id});
             });
         } catch (error) {
             console.error("Error setting up event listeners:", error);
