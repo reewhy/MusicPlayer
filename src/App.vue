@@ -61,6 +61,17 @@ const PlaylistScreen = defineAsyncComponent({
   }
 });
 
+const QueueScreen = defineAsyncComponent({
+  loader: () => import('@/components/overlays/QueueOverlay.vue'),
+  loadingComponent: () => null,
+  errorComponent: () => null,
+  delay: 0,
+  timeout: 5000,
+  onError: (error) => {
+    console.error('Failed to load QueueOverlay:', error);
+  }
+});
+
 const ConfirmDialog = defineAsyncComponent({
   loader: () => import('@/components/ConfirmDialog.vue'),
   loadingComponent: () => null,
@@ -229,6 +240,10 @@ onMounted(async () => {
 
   <Suspense>
     <PlaylistScreen v-show="overlay.isPlaylistOpen" :enabled="overlay.isPlaylistOpen" />
+  </Suspense>
+
+  <Suspense>
+    <QueueScreen v-show="overlay.isQueueOpen" :enabled="overlay.isQueueOpen" />
   </Suspense>
 
   <ConfirmDialog/>

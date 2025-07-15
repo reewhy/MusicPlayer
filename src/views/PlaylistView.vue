@@ -8,7 +8,10 @@ import {ProgressStatus} from "@capacitor/filesystem";
 import { useDatabase } from "@/composables/useDatabase";
 import { useOverlayStore } from "@/stores/overlayStore";
 import {onLongPress} from "@vueuse/core";
+import { useMusicManager } from "@/composables/useMusicManager";
+import SongPlaylistItem from "@/components/SongPlaylistItem.vue";
 
+const musicManager = useMusicManager();
 const overlay = useOverlayStore();
 
 const {
@@ -56,6 +59,17 @@ const download = async () => {
     console.error(error);
     isDownloading.value = false;
     downloadProgress.value = 0;
+  }
+}
+
+const playPlaylist = async () => {
+  try{
+    if (playlist.value?.tracks) {
+      musicManager.setQueue(playlist.value?.tracks)
+      await musicManager.playFromQueue(0);
+    }
+  } catch(error) {
+    console.error("Error while playing playlist: ", error);
   }
 }
 
@@ -213,6 +227,23 @@ onLongPress(
               <v-icon name="md-checkcircleoutline" scale="1.1"></v-icon>
               <span>All tracks downloaded successfully!</span>
             </div>
+
+            <button
+                class="w-full px-6 py-4 rounded-2xl font-semibold text-white transition-all duration-300 shadow-lg relative overflow-hidden group disabled:cursor-not-allowed
+                  bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 hover:shadow-xl hover:shadow-indigo-500/25 transform hover:scale-105"
+
+                @click="playPlaylist"
+            >
+              <!-- Button background animation -->
+              <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+
+              <!-- Button content -->
+              <div class="relative flex items-center justify-center gap-3">
+                <span>
+                  Play
+                </span>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -230,7 +261,7 @@ onLongPress(
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-        <SongItem
+        <SongPlaylistItem
             v-for="(item, index) in playlist?.tracks"
             :key="item.id || index"
             :result="item"

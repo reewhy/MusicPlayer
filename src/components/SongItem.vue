@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDabManager } from "@/composables/useDabManager";
-import {ref, shallowRef, useTemplateRef} from "vue";
+import {ref, shallowRef, useTemplateRef, watch} from "vue";
 import {ProgressStatus} from "@capacitor/filesystem";
 import {onLongPress} from "@vueuse/core";
 import { useOverlayStore } from "@/stores/overlayStore";
@@ -23,25 +23,34 @@ const props = defineProps({
 const downloadProgress = ref(0);
 const isDownloading = ref(false);
 const isDownloaded = ref(false);
+const isDownloadNeeded = ref(false);
 
 // Check and update download progress
 const callbackProgress = async (progress: ProgressStatus) => {
+  isDownloadNeeded.value = true;
   if (progress.lengthComputable && progress.contentLength > 0) {
     downloadProgress.value = Math.round((progress.bytes / progress.contentLength) * 100);
   }
 }
+
+watch(isDownloadNeeded, () => {
+  isDownloading.value = true;
+  downloadProgress.value = 0;
+})
+
+watch(downloadProgress, () => {
+  if(downloadProgress.value === 100) {
+    isDownloaded.value = true;
+  }
+})
 
 // Handle playlist click
 const download = async () => {
   // To-do: Make isDownloaded work
   if (isDownloading.value || isDownloaded.value) return;
 
-  isDownloading.value = true;
-  downloadProgress.value = 0;
-
   try {
     playSong(props.result!, callbackProgress);
-    isDownloaded.value = true;
   } finally {
     isDownloading.value = false;
     downloadProgress.value = 0;

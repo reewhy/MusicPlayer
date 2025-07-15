@@ -9,6 +9,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     const isPlaylistOpen = ref<boolean>(false); // Playlist options
     const isAddOpen = ref<boolean>(false);      // Playlist selection
     const isMusicOpen = ref<boolean>(false);                         // Music overlay
+    const isQueueOpen = ref<boolean>(false);
 
     const inPlaylist = ref<boolean>(false);     // Check if we're in a playlist rn
 
@@ -61,6 +62,13 @@ export const useOverlayStore = defineStore('overlay', () => {
         isMusicOpen.value = false;
     }
 
+    function openQueue(){
+        isQueueOpen.value = true;
+    }
+    function closeQueue(){
+        isQueueOpen.value = false;
+    }
+
     return {
         openOverlay,
         closeOverlay,
@@ -80,5 +88,8 @@ export const useOverlayStore = defineStore('overlay', () => {
         isMusicOpen,
         openMusic,
         closeMusic,
+        isQueueOpen,
+        openQueue,
+        closeQueue,
     };
 })

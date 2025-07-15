@@ -5,6 +5,7 @@ import {onMounted, ref, watch, computed} from "vue";
 import {Album} from "@/types/common";
 import SongItem from "@/components/SongItem.vue";
 import {ProgressStatus} from "@capacitor/filesystem";
+import SongPlaylistItem from "@/components/SongPlaylistItem.vue";
 
 const {
   fetchAlbum,
@@ -204,7 +205,7 @@ watch(() => route.params.id, (newId) => {
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-        <SongItem
+        <SongPlaylistItem
             v-for="(item, index) in album?.tracks"
             :key="item.id || index"
             :result="item"

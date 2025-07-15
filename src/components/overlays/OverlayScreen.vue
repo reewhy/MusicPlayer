@@ -4,6 +4,9 @@ import { useOverlayStore } from "@/stores/overlayStore";
 import { useDatabase } from "@/composables/useDatabase";
 import { useRoute } from "vue-router";
 import { reloadPage } from '@/utils/reloadPage';
+import { useMusicManager } from "@/composables/useMusicManager";
+
+const musicManager = useMusicManager();
 
 // Setups
 const route = useRoute();
@@ -65,6 +68,7 @@ const removeFromThePlaylist = async () => {
 // To implement
 const addToQueue = () => {
   console.log('Add to queue')
+  musicManager.addToQueue(overlay.objData)
   overlay.closeOverlay()
 }
 

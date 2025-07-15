@@ -98,7 +98,6 @@ function createDatabase() {
                                                      upc TEXT,
                                                      mediaCount INTEGER,
                                                      parentalWarning INTEGER,
-                                                        downloaded INTEGER,
                                                      streamable INTEGER,
                                                      purchasable INTEGER,
                                                      previewable INTEGER,

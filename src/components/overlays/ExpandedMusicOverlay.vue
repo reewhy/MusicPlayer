@@ -5,8 +5,6 @@ import type { Song } from "@/types/common";
 import { OhVueIcon } from 'oh-vue-icons';
 import {useOverlayStore} from "@/stores/overlayStore";
 import {useDatabase} from "@/composables/useDatabase";
-import {useRoute} from "vue-router";
-import { reloadPage } from "@/utils/reloadPage";
 
 const {
   likeSong,
@@ -16,8 +14,6 @@ const {
 
 const overlay = useOverlayStore();
 
-const route = useRoute();
-
 // Props
 interface Props {
   isVisible?: boolean;
@@ -26,12 +22,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isVisible: false
 });
-
-// Emits
-const emit = defineEmits<{
-  close: [];
-  openQueue: [];
-}>();
 
 const musicManager = useMusicManager();
 
@@ -98,12 +88,21 @@ const songImage = computed(() => {
 });
 
 const repeatIcon = computed(() => {
-  return repeat.value === 'one' ? 'md-repeat-one' : 'md-repeat';
+  return repeat.value === 'one' ? 'md-repeatone' : 'md-repeat';
 });
 
 const repeatColor = computed(() => {
   return repeat.value !== 'none' ? 'text-purple-400' : 'text-slate-400';
 });
+
+// Open overlay with playlist selection
+const addToPlaylist = () => {
+  if(currentSong.value !== null){
+    overlay.objData = currentSong.value;
+    overlay.openAdd();
+  }
+}
+
 
 // Helper functions
 const formatTime = (seconds: number): string => {
@@ -158,8 +157,10 @@ const toggleMute = async () => {
 };
 
 const toggleLike = async () => {
-  isLiked.value = !isLiked.value;
-  isLiked.value ? await likeSong(overlay.objData) : await unlikeSong(overlay.objData)
+  if(currentSong.value){
+    isLiked.value = !isLiked.value;
+    isLiked.value ? await likeSong(currentSong.value) : await unlikeSong(currentSong.value)
+  }
 };
 
 const seekTo = async (event: MouseEvent) => {
@@ -170,7 +171,7 @@ const seekTo = async (event: MouseEvent) => {
   const newTime = (percentage / 100) * duration.value;
 
   // Actually seek in the audio player
-  await musicManager.seekTo(newTime);
+  await musicManager.seekTo(Math.round(newTime));
   currentTime.value = newTime;
 };
 
@@ -227,9 +228,10 @@ watch(currentSong, async (newSong) => {
     }
 
     currentTime.value = 0;
-    const trackExists = checkIfTrackLiked(overlay.objData);
-    console.log('Track is liked:', trackExists);
-    isLiked.value = trackExists;
+    checkIfTrackLiked(newSong).then((val) => {
+      console.log('Track is liked:', val);
+      isLiked.value = val;
+    });
   }
 });
 
@@ -464,11 +466,11 @@ watch(volume, async (newVolume) => {
 
           <!-- Additional Controls -->
           <div class="flex items-center space-x-4">
-            <button class="p-2 rounded-full hover:bg-slate-700/50 transition-colors" title="Add to playlist">
+            <button class="p-2 rounded-full hover:bg-slate-700/50 transition-colors" title="Add to playlist" @click="addToPlaylist">
               <OhVueIcon name="md-add" class="w-5 h-5 text-slate-400" />
             </button>
             <button
-                @click="emit('openQueue')"
+                @click="overlay.openQueue()"
                 class="p-2 rounded-full hover:bg-slate-700/50 transition-colors"
                 title="Show queue"
             >

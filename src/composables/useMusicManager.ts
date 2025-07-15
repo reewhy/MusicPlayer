@@ -14,7 +14,6 @@ interface MusicState {
     shuffle: boolean;
     repeat: 'none' | 'one' | 'all';
     originalQueue: Song[]; // For shuffle functionality
-    firstSong: boolean;
 }
 
 let state: ReturnType<typeof createMusicManager> | null = null;
@@ -31,9 +30,9 @@ function createMusicManager() {
         shuffle: false,
         repeat: 'none',
         originalQueue: [],
-        firstSong: true
     };
 
+    // Working
     const loadSong = async (song: Song): Promise<boolean> => {
         try {
             // Destroy previous song if exists
@@ -48,8 +47,6 @@ function createMusicManager() {
 
             const filePath = new URL(await getFilePath(song) || '', import.meta.url).href;
             console.log("Loading song with file path:", filePath);
-
-            console.log("Is first song? ", musicState.firstSong);
             // Create the audio source with proper error handling
             await AudioPlayer.create({
                     audioSource: filePath,
@@ -58,7 +55,7 @@ function createMusicManager() {
                     artistName: song.artist || 'Unknown Artist',
                     albumTitle: song.albumTitle || 'Unknown Album',
                     artworkSource: song.images?.large || undefined,
-                    useForNotification: musicState.firstSong,
+                    useForNotification: true,
                     isBackgroundMusic: false,
                     loop: false
                 }).catch(err => console.error("Error while creating audio: ", err))
@@ -80,11 +77,6 @@ function createMusicManager() {
             //     console.log("AudioPlayer.create completed without explicit success flag");
             // }
 
-            // Initialize the audio source
-            await AudioPlayer.onAudioReady({audioId: song.id},  () => {
-                console.log("AudioReady");
-            })
-
             try {
                 AudioPlayer.initialize({audioId: song.id});
             } catch (error) {
@@ -101,6 +93,7 @@ function createMusicManager() {
         }
     };
 
+    // Not tested
     const downloadIfNeeded = async (song: Song, callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         try {
             const downloaded = await isDownloaded(song);
@@ -121,6 +114,8 @@ function createMusicManager() {
         }
     };
 
+    // Semi-working
+    // Bug: doesn't update media control
     const playSong = async (song: Song, callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         try {
             console.log("Playing song:", song.title);
@@ -135,10 +130,10 @@ function createMusicManager() {
             }
 
             // Stop current song if playing
-            // if (musicState.isPlaying && musicState.currentSong) {
-            //     console.log("Stopping previous song")
-            //     await AudioPlayer.stop({ audioId: musicState.currentSong.id });
-            // }
+            if (musicState.isPlaying && musicState.currentSong) {
+                console.log("Stopping previous song")
+                await AudioPlayer.stop({ audioId: musicState.currentSong.id });
+            }
 
             // Load the new song
             const loadSuccess = await loadSong(song);
@@ -150,15 +145,9 @@ function createMusicManager() {
 
             // Play the song
             try {
-                if(musicState.firstSong){
-                    musicState.firstSong = false;
-                    await AudioPlayer.play({ audioId: song.id });
-                }
-                else{
-                    await AudioPlayer.changeAudioSource({audioId: song.id});
-                    await AudioPlayer.changeMetadata({ audioId: song.id});
-                }
+                await AudioPlayer.play({ audioId: song.id });
                 console.log("Song started playing:", song.title);
+                if(song.id) setupEventListeners(song.id);
             } catch (error) {
                 console.error("Error playing song:", error);
                 musicState.isLoading = false;
@@ -177,6 +166,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const pauseSong = async (): Promise<boolean> => {
         try {
             if (musicState.currentSong && musicState.isPlaying) {
@@ -192,6 +182,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const resumeSong = async (): Promise<boolean> => {
         try {
             if (musicState.currentSong && !musicState.isPlaying) {
@@ -207,6 +198,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const stopSong = async (): Promise<boolean> => {
         try {
             if (musicState.currentSong) {
@@ -222,6 +214,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const seekTo = async (timeInSeconds: number): Promise<boolean> => {
         try {
             if (musicState.currentSong) {
@@ -239,6 +232,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const setVolume = async (volume: number): Promise<boolean> => {
         try {
             if (musicState.currentSong) {
@@ -256,6 +250,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const setRate = async (rate: number): Promise<boolean> => {
         try {
             if (musicState.currentSong) {
@@ -273,6 +268,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const getDuration = async (): Promise<number> => {
         try {
             if (musicState.currentSong) {
@@ -286,6 +282,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const getCurrentTime = async (): Promise<number> => {
         try {
             if (musicState.currentSong) {
@@ -299,6 +296,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const checkIsPlaying = async (): Promise<boolean> => {
         try {
             if (musicState.currentSong) {
@@ -313,6 +311,7 @@ function createMusicManager() {
     };
 
     // Queue Management Functions
+    // Working
     const setQueue = (songs: Song[], startIndex: number = 0) => {
         musicState.queue = [...songs];
         musicState.originalQueue = [...songs];
@@ -325,6 +324,7 @@ function createMusicManager() {
         console.log("Queue set with", songs.length, "songs, starting at index", startIndex);
     };
 
+    // Working
     const addToQueue = (song: Song, position?: number) => {
         if (position !== undefined) {
             musicState.queue.splice(position, 0, song);
@@ -339,6 +339,7 @@ function createMusicManager() {
         console.log("Added to queue:", song.title);
     };
 
+    // Working
     const removeFromQueue = async (index: number) => {
         if (index >= 0 && index < musicState.queue.length) {
             const removedSong = musicState.queue[index];
@@ -361,6 +362,7 @@ function createMusicManager() {
         }
     };
 
+    // Working
     const clearQueue = async () => {
         await stopSong();
         musicState.queue = [];
@@ -370,6 +372,7 @@ function createMusicManager() {
         console.log("Queue cleared");
     };
 
+    // Working
     const shuffleQueue = () => {
         if (musicState.queue.length <= 1) return;
 
@@ -392,6 +395,7 @@ function createMusicManager() {
         console.log("Queue shuffled");
     };
 
+    // Working
     const toggleShuffle = () => {
         musicState.shuffle = !musicState.shuffle;
 
@@ -408,11 +412,14 @@ function createMusicManager() {
         console.log("Shuffle toggled:", musicState.shuffle);
     };
 
+    // Semi-working
+    // Bugs: Implement all
     const setRepeat = (mode: 'none' | 'one' | 'all') => {
         musicState.repeat = mode;
         console.log("Repeat mode set to:", mode);
     };
 
+    // Working
     const playNext = async (callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         if (musicState.queue.length === 0) {
             console.log("No songs in queue");
@@ -441,6 +448,8 @@ function createMusicManager() {
         return false;
     };
 
+    // Semi-working
+    // Bugs: Only prev of one
     const playPrevious = async (callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         if (musicState.queue.length === 0) {
             console.log("No songs in queue");
@@ -469,6 +478,7 @@ function createMusicManager() {
         return false;
     };
 
+    // Working
     const playFromQueue = async (index: number, callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         if (index >= 0 && index < musicState.queue.length) {
             musicState.currentIndex = index;
@@ -490,15 +500,17 @@ function createMusicManager() {
     const isLoading = () => musicState.isLoading;
 
     // Set up event listeners with better error handling
-    const setupEventListeners = () => {
+    const setupEventListeners = (id: string) => {
         try {
             // Listen for when audio is ready
-            AudioPlayer.onAudioReady({ audioId: 'default' }, () => {
+            AudioPlayer.onAudioReady({ audioId: id }, () => {
                 console.log('Audio is ready');
+                AudioPlayer.changeMetadata({ audioId: id});
             });
 
             // Listen for when audio ends
-            AudioPlayer.onAudioEnd({ audioId: 'default' }, async () => {
+            // Not tested
+            AudioPlayer.onAudioEnd({ audioId: id }, async () => {
                 console.log('Audio ended');
 
                 if (musicState.repeat === 'one' && musicState.currentSong) {
@@ -518,17 +530,15 @@ function createMusicManager() {
             });
 
             // Listen for playback status changes (from external controls)
-            AudioPlayer.onPlaybackStatusChange({ audioId: 'default' }, (result) => {
+            AudioPlayer.onPlaybackStatusChange({ audioId: id }, (result) => {
                 console.log('Playback status changed:', result.status);
                 musicState.isPlaying = result.status === 'playing';
+                AudioPlayer.changeMetadata({ audioId: id});
             });
         } catch (error) {
             console.error("Error setting up event listeners:", error);
         }
     };
-
-    // Initialize event listeners
-    setupEventListeners();
 
     return {
         // Playback controls
