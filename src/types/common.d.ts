@@ -25,6 +25,7 @@ export interface Song {
     artistId?: string;
     albumTitle?: string;
     albumId?: string;
+    albumCover?: string;
     releaseDate?: string;
     genre?: string;
     duration?: number;

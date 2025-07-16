@@ -2,7 +2,7 @@ import {Album, Song} from "@/types/common";
 import {Capacitor, CapacitorHttp} from "@capacitor/core";
 import {FileTransfer} from "@capacitor/file-transfer";
 import {Directory, Filesystem, ProgressStatus} from "@capacitor/filesystem";
-import {getFilePath} from "@/utils/getFilePath";
+import {getFilePath, getImagePath} from "@/utils/getFilePath";
 
 let state: ReturnType<typeof createDabManager> | null = null;
 
@@ -35,11 +35,12 @@ function createDabManager() {
     async function fetchAlbum(albumId: string): Promise<Album> {
         const finalUrl = `${ROOT_URL}/album?albumId=${albumId}`;
         const response = await fetchData(finalUrl);
+        
         return await response.album;
     }
 
     // Download a song
-    async function downloadSong(song: Song, callback: (progress: ProgressStatus) => void): Promise<void> {
+    async function downloadSong(song: Song, callback: (progress: ProgressStatus) => void, image: null | Album = null): Promise<void> {
         try{
             // Get all permissions on mobile
             const permission = await Filesystem.checkPermissions()
@@ -51,7 +52,6 @@ function createDabManager() {
                 const percent = progress.lengthComputable
                     ? Math.round((progress.bytes / progress.contentLength) * 100)
                     : 0;
-                console.log(`Downloaded ${percent}%`);
             })
 
             let filePath;
@@ -67,23 +67,58 @@ function createDabManager() {
             const finalUrl = await fetchData(streamUrl);
             const url = finalUrl.url;
 
-            console.log(`Downloading ${url}`)
-            console.log(`File path: ${filePath}`)
-
             let result;
 
             // Download the file
             if(filePath){
-                console.log('Officially downloading');
                 result = await FileTransfer.downloadFile({
                     url: url,
-                    path: filePath,
-                    progress: true
+                    path: filePath
                 })
-
-                console.log('Finised')
+                await downloadCover(image === null ? song : image);
             }
 
+
+            console.log(result)
+        } catch(error){
+            console.log(error)
+        }
+    }
+
+    async function downloadCover(obj: Song | Album){
+        try{
+            console.log("Downloading cover of: ", JSON.stringify(obj, null , 2))
+            // Get all permissions on mobile
+            const permission = await Filesystem.checkPermissions()
+            if(permission.publicStorage != 'granted') await Filesystem.requestPermissions();
+
+
+            console.log("got permission to download cover")
+            let filePath;
+            // On mobile: download path
+            // To-Do: change from documents to data
+            if(Capacitor.isNativePlatform()){
+                filePath = await getImagePath(obj, true);
+                console.log("path: ", filePath)
+            }
+
+            let result;
+            // Download the file
+            if(filePath){
+                try{
+                    console.log('Officially downloading image');
+                    console.log("Images available: ", JSON.stringify(obj.images))
+                    result = await FileTransfer.downloadFile({
+                        url: obj.images?.large || obj.images?.small || obj.cover,
+                        path: filePath,
+                        progress: true
+                    })
+
+                    console.log('Finised downloading image')
+                } catch(error){
+                    console.log("Error while downloading cover: ", error);
+                }
+            }
 
             console.log(result)
         } catch(error){
@@ -111,7 +146,8 @@ function createDabManager() {
         searchTracks,
         searchAlbums,
         fetchAlbum,
-        downloadSong
+        downloadSong,
+        downloadCover
     };
 }
 

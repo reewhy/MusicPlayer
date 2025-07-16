@@ -1,6 +1,16 @@
 <script setup lang="ts">
+import {onMounted, ref, watch} from "vue";
+import {getImagePath} from "@/utils/getFilePath";
+import {Album, Song} from "@/types/common";
+
 const props = defineProps({
   result: Object
+})
+const cover_url = ref<string | undefined>('assets/placeholder.png');
+watch(() => props.result, async () => {
+  cover_url.value = await getImagePath(props.result);
+
+  console.log("Watched: ", JSON.stringify(props?.result));
 })
 </script>
 
@@ -56,7 +66,7 @@ const props = defineProps({
         <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
               class="w-full h-full object-cover group-hover:scale-110 group-active:scale-110 transition-transform duration-500"
-              :src="props.result?.images?.large || props.result?.cover"
+              :src="props.result?.images.large || props.result?.cover || cover_url"
               :alt="`${props.result?.title} album cover`"
               loading="lazy"
           />

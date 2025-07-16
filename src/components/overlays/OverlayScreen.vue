@@ -2,14 +2,17 @@
 import {ref, watch} from 'vue'
 import { useOverlayStore } from "@/stores/overlayStore";
 import { useDatabase } from "@/composables/useDatabase";
-import { useRoute } from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import { reloadPage } from '@/utils/reloadPage';
 import { useMusicManager } from "@/composables/useMusicManager";
+import {getImagePath} from "@/utils/getFilePath";
+import {Song} from "@/types/common";
 
 const musicManager = useMusicManager();
 
 // Setups
 const route = useRoute();
+const router = useRouter();
 
 const {
   checkIfTrackLiked,
@@ -26,12 +29,15 @@ const props = defineProps({
 
 // Liked state
 const isLiked = ref(false)
+const cover_url = ref<string | undefined>('assets/placeholder.jpg');
 
 watch(() => overlay.isOpen, async () => {
   const trackExists = await checkIfTrackLiked(overlay.objData)
   console.log('Track is liked:', trackExists)
 
   isLiked.value = trackExists
+
+  cover_url.value = await getImagePath(overlay.objData);
 })
 
 // Functions
@@ -81,6 +87,7 @@ const goToArtist = () => {
 // To implement
 const goToAlbum = () => {
   console.log('Go to artist')
+  router.push({name: 'album', params: {id: overlay.objData.albumId}});
   overlay.closeOverlay()
 }
 
@@ -122,7 +129,7 @@ const closeOverlay = (event: Event) => {
               <!-- Album artwork -->
               <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-700/50 shadow-md flex-shrink-0">
                 <img
-                    :src="overlay.objData?.images?.large || 'assets/placeholder.png'"
+                    :src="cover_url || overlay.objData?.images?.large || 'assets/placeholder.png'"
                     :alt="`${overlay.objData?.title} album cover`"
                     class="w-full h-full object-cover"
                     loading="lazy"

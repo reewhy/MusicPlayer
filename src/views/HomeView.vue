@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useDabManager } from "@/composables/useDabManager"
 import SongItem from "@/components/SongItem.vue";
 import AlbumItem from "@/components/AlbumItem.vue";
+import {Album, Song} from "@/types/common";
 
 const { searchAlbums, searchTracks } = useDabManager()
 const route = useRoute()
@@ -12,7 +13,7 @@ const title = ref('')
 const type = ref<'track' | 'album'>('track')
 
 // Search results
-const searchResults = ref<any[]>([])
+const searchResults = ref<Song[] | Album[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 

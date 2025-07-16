@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { useDabManager } from "@/composables/useDabManager";
-import {ref, shallowRef, useTemplateRef, watch} from "vue";
+import {onMounted, ref, shallowRef, useTemplateRef, watch} from "vue";
 import {ProgressStatus} from "@capacitor/filesystem";
 import {onLongPress} from "@vueuse/core";
 import { useOverlayStore } from "@/stores/overlayStore";
 import { useMusicManager } from "@/composables/useMusicManager";
+import {getImagePath} from "@/utils/getFilePath";
+import {Song} from "@/types/common";
 
 // Setups
 const overlay = useOverlayStore();
+
+
 
 const {
   playSong
@@ -83,6 +86,13 @@ onLongPress(
       }
     }
 )
+
+const cover_url = ref<string | undefined>('assets/placeholder.jpg');
+watch(() => props?.result, async () => {
+  if(props.result) cover_url.value = await getImagePath(props?.result as Song);
+})
+
+//
 </script>
 
 <template>
@@ -149,7 +159,7 @@ onLongPress(
         <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
               class="w-full h-full object-cover"
-              :src="image || props.result?.images?.large"
+              :src="cover_url || image || props.result?.images?.large"
               :alt="`${props.result?.title} cover`"
               loading="lazy"
           />

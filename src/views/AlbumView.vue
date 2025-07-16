@@ -2,15 +2,25 @@
 import { useRoute } from 'vue-router';
 import { useDabManager } from "@/composables/useDabManager";
 import {onMounted, ref, watch, computed} from "vue";
-import {Album} from "@/types/common";
-import SongItem from "@/components/SongItem.vue";
+import {Album, Song} from "@/types/common";
 import {ProgressStatus} from "@capacitor/filesystem";
 import SongPlaylistItem from "@/components/SongPlaylistItem.vue";
+import { useDatabase } from "@/composables/useDatabase";
+import { useMusicManager } from "@/composables/useMusicManager";
+import {getImagePath} from "@/utils/getFilePath";
+
+const musicManager = useMusicManager();
 
 const {
   fetchAlbum,
   downloadSong
 } = useDabManager();
+
+const {
+  checkIfAlbumLiked,
+    likeAlbum,
+    unlikeAlbum
+} = useDatabase();
 
 const route = useRoute();
 
@@ -19,6 +29,7 @@ const downloadProgress = ref(0);
 const isDownloading = ref(false);
 const downloadingSong = ref<string>();
 const isDownloaded = ref(false);
+const isLiked = ref(false)
 
 const callbackProgress = async (progress: ProgressStatus) => {
   if (progress.lengthComputable && progress.contentLength > 0) {
@@ -38,7 +49,7 @@ const download = async () => {
     if (album.value?.tracks) {
       for (const track of album.value.tracks) {
         downloadingSong.value = track.title;
-        await downloadSong(track, callbackProgress);
+        await downloadSong(track, callbackProgress, album.value);
       }
     }
 
@@ -52,9 +63,36 @@ const download = async () => {
   }
 }
 
+const playAlbum = async () => {
+  try{
+    if (album.value?.tracks) {
+      musicManager.setQueue(album.value?.tracks)
+      await musicManager.playFromQueue(0);
+    }
+  } catch(error) {
+    console.error("Error while playing playlist: ", error);
+  }
+}
+
 const fetchAlbumData = async (albumId: string) => {
   album.value = await fetchAlbum(albumId);
   console.log(album.value.title)
+  const trackExists = await checkIfAlbumLiked(albumId)
+  console.log('Track is liked:', trackExists)
+
+  isLiked.value = trackExists
+  cover_url.value = await getImagePath(album.value);
+
+  console.log("Album cover url: ", cover_url.value)
+}
+
+// Functions
+const toggleLike = async () => {
+  if(album.value !== undefined){
+    isLiked.value = !isLiked.value
+    isLiked.value ? await likeAlbum(album.value) : await unlikeAlbum(album.value)
+    console.log('Like toggled:', isLiked.value)
+  }
 }
 
 // Format duration from seconds to mm:ss
@@ -75,6 +113,7 @@ const totalDuration = computed(() => {
 onMounted(async () => {
   fetchAlbumData(route.params.id);
 })
+const cover_url = ref<string | undefined>();
 
 watch(() => route.params.id, (newId) => {
   if (newId) fetchAlbumData(newId);
@@ -95,7 +134,7 @@ watch(() => route.params.id, (newId) => {
           <div class="aspect-square rounded-2xl overflow-hidden bg-slate-700/50 shadow-2xl shadow-black/50">
             <img
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                :src="album?.cover || album?.images?.large"
+                :src="cover_url || album?.cover || album?.images?.large"
                 :alt="`${album?.title} album cover`"
                 loading="lazy"
             />
@@ -134,6 +173,23 @@ watch(() => route.params.id, (newId) => {
                 <span>{{ formatDuration(totalDuration) }}</span>
               </div>
             </div>
+
+            <!-- Like/Unlike -->
+            <button
+                @click="toggleLike"
+                class="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-800/60 transition-all duration-200 active:bg-slate-700/60"
+            >
+              <div class="w-6 h-6 flex items-center justify-center">
+                <v-icon
+                    :name="isLiked ? 'md-favorite' : 'md-favoriteborder'"
+                    scale="1.1"
+                    :class="isLiked ? 'text-purple-400' : 'text-slate-400'"
+                />
+              </div>
+              <span class="text-white text-base font-medium">
+                {{ isLiked ? 'Remove from Goonable Tracks' : 'Add to Goonable Tracks' }}
+              </span>
+            </button>
           </div>
 
           <!-- Download Button -->
@@ -188,6 +244,23 @@ watch(() => route.params.id, (newId) => {
               <v-icon name="md-checkcircleoutline" scale="1.1"></v-icon>
               <span>All tracks downloaded successfully!</span>
             </div>
+
+            <button
+                class="w-full px-6 py-4 rounded-2xl font-semibold text-white transition-all duration-300 shadow-lg relative overflow-hidden group disabled:cursor-not-allowed
+                  bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 hover:shadow-xl hover:shadow-indigo-500/25 transform hover:scale-105"
+
+                @click="playAlbum"
+            >
+              <!-- Button background animation -->
+              <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+
+              <!-- Button content -->
+              <div class="relative flex items-center justify-center gap-3">
+                <span>
+                  Play
+                </span>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -209,7 +282,7 @@ watch(() => route.params.id, (newId) => {
             v-for="(item, index) in album?.tracks"
             :key="item.id || index"
             :result="item"
-            :image="album?.cover || album?.images?.large"
+            :image="cover_url || album?.cover || album?.images?.large"
             :compact="true"
             class="transform hover:scale-105 transition-transform duration-200"
         />

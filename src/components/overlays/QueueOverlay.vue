@@ -6,6 +6,7 @@ import { useDatabase } from "@/composables/useDatabase";
 import type { Song } from "@/types/common";
 import { OhVueIcon } from 'oh-vue-icons';
 import { Haptics } from "@capacitor/haptics";
+import {getImagePath} from "@/utils/getFilePath";
 
 const overlay = useOverlayStore();
 const musicManager = useMusicManager();
@@ -53,6 +54,7 @@ const updateState = async () => {
   isPlaying.value = state.isPlaying;
   shuffle.value = state.shuffle;
   repeat.value = state.repeat;
+  cover_url.value = await getImagePath(state.currentSong);
 
   // Update liked songs
   for (const song of queue.value) {
@@ -470,6 +472,7 @@ onUnmounted(() => {
   }
 });
 
+const cover_url = ref<string | undefined>('assets/placeholder.jpg');
 // Watch for prop changes
 watch(() => props.enabled, (enabled) => {
   if (enabled) {
@@ -585,7 +588,7 @@ watch(() => props.enabled, (enabled) => {
         <div class="flex items-center space-x-3">
           <div class="relative">
             <img
-                :src="currentSong.images?.large || currentSong.images?.small"
+                :src="cover_url || currentSong.images?.large || currentSong.images?.small"
                 :alt="currentSong.title"
                 class="w-12 h-12 rounded-lg object-cover"
             />

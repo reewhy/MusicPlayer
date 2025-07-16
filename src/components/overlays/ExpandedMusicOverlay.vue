@@ -5,6 +5,7 @@ import type { Song } from "@/types/common";
 import { OhVueIcon } from 'oh-vue-icons';
 import {useOverlayStore} from "@/stores/overlayStore";
 import {useDatabase} from "@/composables/useDatabase";
+import {getImagePath} from "@/utils/getFilePath";
 
 const {
   likeSong,
@@ -20,7 +21,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isVisible: false
+  isVisible: true
 });
 
 const musicManager = useMusicManager();
@@ -80,6 +81,8 @@ const formattedCurrentTime = computed(() => {
 const formattedDuration = computed(() => {
   return formatTime(duration.value);
 });
+
+const cover_url = ref<string | undefined>('assets/placeholder.jpg');
 
 const songImage = computed(() => {
   return currentSong.value?.images?.large ||
@@ -232,6 +235,7 @@ watch(currentSong, async (newSong) => {
       console.log('Track is liked:', val);
       isLiked.value = val;
     });
+    cover_url.value = await getImagePath(newSong);
   }
 });
 
@@ -289,7 +293,7 @@ watch(volume, async (newVolume) => {
       <div class="flex justify-center px-8 mb-16">
         <div class="relative w-80 h-80 max-w-[80vw] max-h-[80vw]">
           <img
-              :src="songImage"
+              :src="cover_url || songImage"
               :alt="currentSong.title || 'Album cover'"
               class="w-full h-full rounded-lg shadow-2xl object-cover"
           />

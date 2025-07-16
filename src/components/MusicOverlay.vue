@@ -4,6 +4,7 @@ import { useMusicManager } from "@/composables/useMusicManager";
 import type { Song } from "@/types/common";
 import { OhVueIcon } from 'oh-vue-icons';
 import {useOverlayStore} from "@/stores/overlayStore";
+import {getImagePath} from "@/utils/getFilePath";
 
 const {
   openMusic
@@ -24,6 +25,7 @@ const updateState = () => {
   currentSong.value = state.currentSong;
   isPlaying.value = state.isPlaying;
   isLoading.value = state.isLoading;
+  cover_url.value = getImagePath(state.currentSong as Song);
 };
 
 // Progress percentage
@@ -32,6 +34,7 @@ const progressPercentage = computed(() => {
   return (currentTime.value / duration.value) * 100;
 });
 
+const cover_url = ref<string | undefined>('assets/placeholder.jpg');
 // Song image with fallback
 const songImage = computed(() => {
   return currentSong.value?.images?.large ||
@@ -111,7 +114,7 @@ const expandPlayer = () => {
         <div class="flex items-center space-x-3 flex-1 min-w-0">
           <div class="relative">
             <img
-                :src="songImage"
+                :src="cover_url || songImage"
                 :alt="currentSong?.title || 'Album cover'"
                 class="w-10 h-10 rounded-md object-cover"
             />

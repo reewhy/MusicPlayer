@@ -4,17 +4,20 @@ import {onMounted, ref} from "vue";
 import PlaylistItem from "@/components/PlaylistItem.vue";
 import type { Playlist } from "@/types/common"; // adjust if needed
 import { useOverlayStore } from "@/stores/overlayStore";
+import AlbumItem from "@/components/AlbumItem.vue";
 
 const overlay = useOverlayStore();
-const { getAllPlaylists } = useDatabase();
+const { getAllPlaylists, getAllAlbums } = useDatabase();
 
 const playlists = ref<Playlist[]>([]);
+const albums = ref<Album[]>([]);
 const isLoading = ref(true);
 
 onMounted(async () => {
   try {
     isLoading.value = true;
     playlists.value = await getAllPlaylists() || [];
+    albums.value = await getAllAlbums() || [];
   } catch (error) {
     console.error("Error in LibraryView:", error);
     playlists.value = [];
@@ -45,7 +48,12 @@ onMounted(async () => {
       </div>
 
       <!-- Playlists found -->
-      <div v-else-if="playlists.length > 0">
+      <div v-else-if="playlists.length > 0 || albums.length > 0">
+        <h1 class="text-2xl font-bold text-white mb-4 text-center">
+          <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            Playlists
+          </span>
+        </h1>
         <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <PlaylistItem
               v-for="playlist in playlists"
@@ -54,15 +62,28 @@ onMounted(async () => {
               class="transform hover:scale-105 transition-transform duration-200"
           />
         </div>
+        <h1 class="text-2xl font-bold text-white mb-4 text-center">
+          <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            Albums
+          </span>
+        </h1>
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AlbumItem
+              v-for="album in albums"
+              :key="album.id"
+              :result="album"
+              class="transform hover:scale-105 transition-transform duration-200"
+          />
+        </div>
       </div>
 
-      <!-- No playlists -->
+      <!-- No playlists and albums -->
       <div v-else class="text-center py-16">
         <div class="mb-4">
           <v-icon name="md-musicnote" scale="3" class="text-slate-600"></v-icon>
         </div>
         <h3 class="text-xl font-semibold text-slate-400 mb-2">
-          No playlists found.
+          No playlists or albums found.
         </h3>
       </div>
     </div>

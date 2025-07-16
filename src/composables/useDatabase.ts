@@ -1,6 +1,6 @@
 import {CapacitorSQLite, SQLiteConnection, SQLiteDBConnection} from "@capacitor-community/sqlite"
 import {ref} from "vue"
-import {Playlist, Song} from "@/types/common"
+import {Album, Playlist, Song} from "@/types/common"
 import { parseSong } from "@/utils/parseSong";
 
 let state: ReturnType<typeof createDatabase> | null = null
@@ -332,6 +332,73 @@ function createDatabase() {
         }
     };
 
+    const fetchAlbumTracks = async (id: number): Promise<Song[]> => {
+        try {
+            console.log("Checking id:", id);
+
+            if (!db.value) return [];
+
+            const res = await db.value.query(
+                "SELECT * FROM songs WHERE albumId = ?;",
+                [id]
+            );
+
+
+            if (!res.values || res.values.length <= 0) return [];
+
+            const promises = res.values.map(async (track) => {
+                if(track.values && track.values.length > 0) {
+                    return parseSong(track.values[0]);
+                } else {
+                    return null;
+                }
+            })
+
+            console.log("Finished fetching songs");
+
+            const result = (await Promise.all(promises)).filter(
+                (track): track is Song => track !== null
+            );
+
+            console.log("Finished everything");
+
+            return result;
+
+        } catch (e) {
+            console.error("Error while fetching playlist tracks:", e);
+            return [];
+        }
+    };
+
+    const getAllAlbums = async (): Promise<Album[] | null> => {
+        if (!db.value) return null;
+
+        try {
+            const res = await db.value.query("SELECT * FROM albums;");
+            const albums = res.values ?? [];
+
+            console.log("Albums found:", JSON.stringify(albums, null, 2));
+
+            const result: Album[] = await Promise.all(
+                albums.map(async (album) => {
+                    const tracks = await fetchAlbumTracks(album.id);
+
+                    const final: Album = {
+                        ...album,
+                        tracks: tracks
+                    }
+
+                    return final;
+                })
+            );
+
+            return result;
+        } catch (e) {
+            console.error("Error while fetching all albums:", e);
+            return null;
+        }
+    };
+
     // Get a saved track
     const getTrack = async (song: Song): Promise<Song | null> => {
         try{
@@ -371,6 +438,32 @@ function createDatabase() {
         }
     }
 
+
+    const checkIfAlbumLiked = async (album: Album | string): Promise<boolean> => {
+        try {
+            if (!db.value) return false
+            const res = await db.value.query("SELECT COUNT(*) as count FROM albums WHERE id=?;", [typeof(album) === "object" ? album.id : album])
+
+            console.log("Full response:", JSON.stringify(res, null, 2))
+            console.log("res.values:", JSON.stringify(res.values, null, 2))
+
+            if (res.values && res.values.length > 0) {
+                console.log("First row:", JSON.stringify(res.values[0], null, 2))
+                // Try accessing as object property instead of array index
+                const count = res.values[0].count as number
+                console.log("Count value:", count)
+                return count > 0
+            }
+
+            return false
+        } catch (e) {
+            console.error(e)
+            return false
+        }
+    }
+
+
+
     // Remove a track (use this later for garbage collection??? Is this the correct name)
     const removeTrack = async (track: Song) => {
         if(!db.value) return;
@@ -409,6 +502,8 @@ function createDatabase() {
             return false
         }
     }
+
+
 
     // Add song to a playlist
     const addToPlaylist = async (track: Song, playlist: Playlist): Promise<boolean> => {
@@ -545,6 +640,63 @@ function createDatabase() {
         }
     }
 
+    const unlikeAlbum = async (album: Album): Promise<boolean> => {
+        if (!db.value) return false
+
+        const statement = `
+            DELETE FROM albums WHERE id=?
+        `;
+
+        const values = [ album.id ];
+
+        try {
+            await db.value.run(statement, values)
+            console.log(`Album ${album.id} removed!`)
+            return true
+        } catch (error) {
+            console.error(`Failed to remove album ${album.id}:`, error)
+            return false
+        }
+    }
+
+    const likeAlbum = async (album: Album): Promise<boolean> => {
+        if (!db.value) return false
+
+        const statement = `
+            INSERT OR IGNORE INTO albums (
+                id, title, artist, artistId, releaseDate, cover,
+                genre, trackCount, audioQuality, label, genreId, images)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+
+        album?.tracks?.forEach(async (track) => {
+            await insertTrack(track);
+        })
+
+        const values = [
+            album.id ?? null,
+            album.title ?? null,
+            album.artist ?? null,
+            album.artistId ?? null,
+            album.releaseDate ?? null,
+            album.genre ?? null,
+            album.audioQuality ? JSON.stringify(album.audioQuality) : null,
+            album.label ?? null,
+            album.trackCount ?? null,
+            album.genreId ?? null,
+            album.images ? JSON.stringify(album.images) : null,
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            console.log(`Album ${album.id} inserted!`)
+            return true
+        } catch (error) {
+            console.error(`Failed to insert album ${album.id}:`, error)
+            return false
+        }
+    }
+
     return {
         insertTrack,
         getAllTracks,
@@ -563,7 +715,12 @@ function createDatabase() {
         updatePlaylistName,
         deletePlaylist,
         addToPlaylist,
-        removeFromPlaylist
+        removeFromPlaylist,
+        checkIfAlbumLiked,
+        likeAlbum,
+        unlikeAlbum,
+        getAllAlbums,
+        fetchAlbumTracks
     }
 }
 

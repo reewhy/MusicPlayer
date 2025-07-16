@@ -247,7 +247,7 @@ onMounted(async () => {
   </Suspense>
 
   <ConfirmDialog/>
-  <ExpandedMusicOverlay :is-visible="overlay.isMusicOpen"></ExpandedMusicOverlay>
+  <ExpandedMusicOverlay v-show="overlay.isMusicOpen" :is-visible="overlay.isMusicOpen"></ExpandedMusicOverlay>
 
   <Suspense>
     <AddScreen v-show="overlay.isAddOpen" :enabled="overlay.isAddOpen" />

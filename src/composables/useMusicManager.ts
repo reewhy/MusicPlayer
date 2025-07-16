@@ -1,6 +1,6 @@
 import { Song } from "@/types/common";
 import { AudioPlayer } from "@mediagrid/capacitor-native-audio";
-import { getFilePath } from "@/utils/getFilePath";
+import {getFilePath, getImagePath} from "@/utils/getFilePath";
 import { isDownloaded } from "@/utils/isDownloaded";
 import { useDabManager } from "@/composables/useDabManager";
 import { ProgressStatus } from "@capacitor/filesystem";
@@ -37,7 +37,6 @@ function createMusicManager() {
         try {
             // Destroy previous song if exists
             if (musicState.currentSong && musicState.currentSong.id !== song.id) {
-                console.log("Destroying song: ", JSON.stringify(musicState.currentSong));
                 try {
                     await AudioPlayer.destroy({ audioId: musicState.currentSong.id });
                 } catch (error) {
@@ -46,7 +45,6 @@ function createMusicManager() {
             }
 
             const filePath = new URL(await getFilePath(song) || '', import.meta.url).href;
-            console.log("Loading song with file path:", filePath);
             // Create the audio source with proper error handling
             await AudioPlayer.create({
                     audioSource: filePath,
@@ -85,9 +83,6 @@ function createMusicManager() {
                 console.error("Error initializing audio source:", error);
                 return false;
             }
-
-
-            console.log("Song loaded successfully:", song.title);
             return true;
         } catch (error) {
             console.error("Error while loading song:", error);
@@ -100,14 +95,11 @@ function createMusicManager() {
         try {
             const downloaded = await isDownloaded(song);
             if (!downloaded) {
-                console.log("Song not downloaded, downloading:", song.title);
                 if (callback) {
                     await downloadSong(song, callback);
                 } else {
                     await downloadSong(song, () => {});
                 }
-            } else {
-                console.log("Song already downloaded:", song.title);
             }
             return true;
         } catch (error) {
@@ -120,7 +112,6 @@ function createMusicManager() {
     // Bug: doesn't update media control
     const playSong = async (song: Song, callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         try {
-            console.log("Playing song:", song.title);
             musicState.isLoading = true;
 
             // Download if needed
@@ -133,7 +124,6 @@ function createMusicManager() {
 
             // Stop current song if playing
             if (musicState.isPlaying && musicState.currentSong) {
-                console.log("Stopping previous song")
                 await AudioPlayer.stop({ audioId: musicState.currentSong.id });
             }
 
@@ -148,7 +138,6 @@ function createMusicManager() {
             // Play the song
             try {
                 await AudioPlayer.play({ audioId: song.id });
-                console.log("Song started playing:", song.title);
                 if(song.id) setupEventListeners(song.id);
             } catch (error) {
                 console.error("Error playing song:", error);
@@ -174,7 +163,6 @@ function createMusicManager() {
             if (musicState.currentSong && musicState.isPlaying) {
                 await AudioPlayer.pause({ audioId: musicState.currentSong.id });
                 musicState.isPlaying = false;
-                console.log("Song paused:", musicState.currentSong.title);
                 return true;
             }
             return false;
@@ -190,7 +178,6 @@ function createMusicManager() {
             if (musicState.currentSong && !musicState.isPlaying) {
                 await AudioPlayer.play({ audioId: musicState.currentSong.id });
                 musicState.isPlaying = true;
-                console.log("Song resumed:", musicState.currentSong.title);
                 return true;
             }
             return false;
@@ -206,7 +193,6 @@ function createMusicManager() {
             if (musicState.currentSong) {
                 await AudioPlayer.stop({ audioId: musicState.currentSong.id });
                 musicState.isPlaying = false;
-                console.log("Song stopped:", musicState.currentSong.title);
                 return true;
             }
             return false;
@@ -224,7 +210,6 @@ function createMusicManager() {
                     audioId: musicState.currentSong.id,
                     timeInSeconds
                 });
-                console.log("Seeked to:", timeInSeconds);
                 return true;
             }
             return false;
@@ -242,7 +227,6 @@ function createMusicManager() {
                     audioId: musicState.currentSong.id,
                     volume
                 });
-                console.log("Volume set to:", volume);
                 return true;
             }
             return false;
@@ -260,7 +244,6 @@ function createMusicManager() {
                     audioId: musicState.currentSong.id,
                     rate
                 });
-                console.log("Rate set to:", rate);
                 return true;
             }
             return false;
@@ -315,6 +298,10 @@ function createMusicManager() {
     // Queue Management Functions
     // Working
     const setQueue = (songs: Song[], startIndex: number = 0) => {
+        songs.forEach(async (song) => {
+            if(song.images)
+                song.images.large = await getImagePath(song);
+        })
         musicState.queue = [...songs];
         musicState.originalQueue = [...songs];
         musicState.currentIndex = startIndex;
@@ -322,12 +309,12 @@ function createMusicManager() {
         if (musicState.shuffle) {
             shuffleQueue();
         }
-
-        console.log("Queue set with", songs.length, "songs, starting at index", startIndex);
     };
 
     // Working
-    const addToQueue = (song: Song, position?: number) => {
+    const addToQueue = async (song: Song, position?: number) => {
+        if(song.images)
+            song.images.large = await getImagePath(song);
         if (position !== undefined) {
             musicState.queue.splice(position, 0, song);
             musicState.originalQueue.splice(position, 0, song);
@@ -338,7 +325,6 @@ function createMusicManager() {
             musicState.queue.push(song);
             musicState.originalQueue.push(song);
         }
-        console.log("Added to queue:", song.title);
     };
 
     // Working
@@ -359,8 +345,6 @@ function createMusicManager() {
                 await stopSong();
                 musicState.currentSong = null;
             }
-
-            console.log("Removed from queue:", removedSong.title);
         }
     };
 
@@ -371,7 +355,6 @@ function createMusicManager() {
         musicState.originalQueue = [];
         musicState.currentIndex = -1;
         musicState.currentSong = null;
-        console.log("Queue cleared");
     };
 
     // Working
@@ -393,8 +376,6 @@ function createMusicManager() {
         } else {
             musicState.queue = otherSongs;
         }
-
-        console.log("Queue shuffled");
     };
 
     // Working
@@ -410,21 +391,17 @@ function createMusicManager() {
                 musicState.currentIndex = musicState.queue.findIndex(s => s.id === musicState.currentSong!.id);
             }
         }
-
-        console.log("Shuffle toggled:", musicState.shuffle);
     };
 
     // Semi-working
     // Bugs: Implement all
     const setRepeat = (mode: 'none' | 'one' | 'all') => {
         musicState.repeat = mode;
-        console.log("Repeat mode set to:", mode);
     };
 
     // Working
     const playNext = async (callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         if (musicState.queue.length === 0) {
-            console.log("No songs in queue");
             return false;
         }
 
@@ -434,7 +411,6 @@ function createMusicManager() {
             if (musicState.repeat === 'all') {
                 nextIndex = 0;
             } else {
-                console.log("End of queue reached");
                 return false;
             }
         }
@@ -443,7 +419,6 @@ function createMusicManager() {
         const nextSong = musicState.queue[nextIndex];
 
         if (nextSong) {
-            console.log("Playing next song:", nextSong.title);
             return await playSong(nextSong, callback);
         }
 
@@ -454,7 +429,6 @@ function createMusicManager() {
     // Bugs: Only prev of one
     const playPrevious = async (callback?: (progress: ProgressStatus) => void): Promise<boolean> => {
         if (musicState.queue.length === 0) {
-            console.log("No songs in queue");
             return false;
         }
 
@@ -464,7 +438,6 @@ function createMusicManager() {
             if (musicState.repeat === 'all') {
                 prevIndex = musicState.queue.length - 1;
             } else {
-                console.log("Beginning of queue reached");
                 return false;
             }
         }
@@ -473,7 +446,6 @@ function createMusicManager() {
         const prevSong = musicState.queue[prevIndex];
 
         if (prevSong) {
-            console.log("Playing previous song:", prevSong.title);
             return await playSong(prevSong, callback);
         }
 
@@ -485,7 +457,6 @@ function createMusicManager() {
         if (index >= 0 && index < musicState.queue.length) {
             musicState.currentIndex = index;
             const song = musicState.queue[index];
-            console.log("Playing from queue at index", index, ":", song.title);
             return await playSong(song, callback);
         }
         return false;
@@ -506,25 +477,20 @@ function createMusicManager() {
         try {
             // Listen for when audio is ready
             AudioPlayer.onAudioReady({ audioId: id }, () => {
-                console.log('Audio is ready');
                 // AudioPlayer.changeMetadata({ audioId: id});
             });
 
             // Listen for when audio ends
             // Not tested
             AudioPlayer.onAudioEnd({ audioId: id }, async () => {
-                console.log('Audio ended');
-
                 if (musicState.repeat === 'one' && musicState.currentSong) {
                     // Replay the same song
-                    console.log("Repeating current song");
                     await playSong(musicState.currentSong);
                 } else {
                     // Play next song
                     const success = await playNext();
                     if (!success) {
                         // End of queue reached
-                        console.log("Playback ended - no more songs");
                         musicState.isPlaying = false;
                         musicState.currentSong = null;
                     }
@@ -533,7 +499,6 @@ function createMusicManager() {
 
             // Listen for playback status changes (from external controls)
             AudioPlayer.onPlaybackStatusChange({ audioId: id }, (result) => {
-                console.log('Playback status changed:', result.status);
                 musicState.isPlaying = result.status === 'playing';
                 // AudioPlayer.changeMetadata({ audioId: id});
             });
