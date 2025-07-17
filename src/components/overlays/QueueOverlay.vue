@@ -58,6 +58,7 @@ const updateState = async () => {
 
   // Update liked songs
   for (const song of queue.value) {
+    song.albumCover = await getImagePath(song.albumId);
     if (song.id) {
       const isLiked = await checkIfTrackLiked(song);
       if (isLiked) {
@@ -588,7 +589,7 @@ watch(() => props.enabled, (enabled) => {
         <div class="flex items-center space-x-3">
           <div class="relative">
             <img
-                :src="cover_url || currentSong.images?.large || currentSong.images?.small"
+                :src="cover_url"
                 :alt="currentSong.title"
                 class="w-12 h-12 rounded-lg object-cover"
             />
@@ -662,7 +663,7 @@ watch(() => props.enabled, (enabled) => {
               <!-- Album Art -->
               <div class="relative">
                 <img
-                    :src="song.images?.large || song.images?.small"
+                    :src="song.albumCover"
                     :alt="song.title"
                     class="w-12 h-12 rounded-lg object-cover"
                     loading="lazy"

@@ -66,7 +66,7 @@ watch(() => props.result, async () => {
         <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
               class="w-full h-full object-cover group-hover:scale-110 group-active:scale-110 transition-transform duration-500"
-              :src="props.result?.images.large || props.result?.cover || cover_url"
+              :src="cover_url"
               :alt="`${props.result?.title} album cover`"
               loading="lazy"
           />

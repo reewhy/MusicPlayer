@@ -129,7 +129,7 @@ const closeOverlay = (event: Event) => {
               <!-- Album artwork -->
               <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-700/50 shadow-md flex-shrink-0">
                 <img
-                    :src="cover_url || overlay.objData?.images?.large || 'assets/placeholder.png'"
+                    :src="cover_url"
                     :alt="`${overlay.objData?.title} album cover`"
                     class="w-full h-full object-cover"
                     loading="lazy"

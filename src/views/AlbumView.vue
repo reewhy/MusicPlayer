@@ -186,9 +186,6 @@ watch(() => route.params.id, (newId) => {
                     :class="isLiked ? 'text-purple-400' : 'text-slate-400'"
                 />
               </div>
-              <span class="text-white text-base font-medium">
-                {{ isLiked ? 'Remove from Goonable Tracks' : 'Add to Goonable Tracks' }}
-              </span>
             </button>
           </div>
 

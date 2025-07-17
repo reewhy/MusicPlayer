@@ -2,7 +2,7 @@ import {Album, Song} from "@/types/common";
 import {Capacitor, CapacitorHttp} from "@capacitor/core";
 import {FileTransfer} from "@capacitor/file-transfer";
 import {Directory, Filesystem, ProgressStatus} from "@capacitor/filesystem";
-import {getFilePath, getImagePath} from "@/utils/getFilePath";
+import {getFilePath, getImagePath, returnImagePath} from "@/utils/getFilePath";
 
 let state: ReturnType<typeof createDabManager> | null = null;
 
@@ -98,7 +98,7 @@ function createDabManager() {
             // On mobile: download path
             // To-Do: change from documents to data
             if(Capacitor.isNativePlatform()){
-                filePath = await getImagePath(obj, true);
+                filePath = await returnImagePath(obj);
                 console.log("path: ", filePath)
             }
 

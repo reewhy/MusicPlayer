@@ -15,8 +15,28 @@ export async function getFilePath(song: Song) {
     }
 }
 
-export async function getImagePath(obj: Song | Album | object, save: boolean = false) {
+export async function returnImagePath(obj: Song | Album){
+    try{
+        // Determine the correct ID to use
+        const fileId = obj.albumId || obj.id;
+
+        if (!fileId) {
+            throw new Error("No valid ID found for file path");
+        }
+
+        const pathResult = await Filesystem.getUri({
+            path: `covers/${fileId}.jpg`,
+            directory: DEFAULT_DIRECTORY
+        });
+        return pathResult.uri;
+    } catch(error){
+        return null;
+    }
+}
+
+export async function getImagePath(obj: Song | Album | object): Promise<string> {
     if(obj === null) return 'assets/placeholder.png';
+
     try {
         if (Capacitor.isNativePlatform()) {
             // Check if covers directory exists first
@@ -26,8 +46,8 @@ export async function getImagePath(obj: Song | Album | object, save: boolean = f
                     directory: DEFAULT_DIRECTORY
                 });
             } catch (error) {
-                // Directory doesn't exist, so file can't be downloaded
-                return false;
+                // Directory doesn't exist, fall back to fallback logic
+                throw new Error("Covers directory not found");
             }
 
             // Determine the correct ID to use
@@ -52,17 +72,21 @@ export async function getImagePath(obj: Song | Album | object, save: boolean = f
                 directory: DEFAULT_DIRECTORY
             });
 
-            if (save) {
-                return pathResult.uri;
-            } else {
-                return Capacitor.convertFileSrc(pathResult.uri);
-            }
+            return Capacitor.convertFileSrc(pathResult.uri);
         }
     } catch (err) {
+        // Fallback logic for both native and web platforms
         if(obj.images){
-            return obj.images?.large || obj.images?.small
+            return obj.images?.large || obj.images?.small || 'assets/placeholder.png';
         } else {
             return obj.albumCover || obj.cover || 'assets/placeholder.png';
         }
+    }
+
+    // Fallback for web platform (when not native)
+    if(obj.images){
+        return obj.images?.large || obj.images?.small || 'assets/placeholder.png';
+    } else {
+        return obj.albumCover || obj.cover || 'assets/placeholder.png';
     }
 }

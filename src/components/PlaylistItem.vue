@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import {shallowRef, useTemplateRef} from "vue";
 import {onLongPress} from "@vueuse/core";
 import { useOverlayStore } from "@/stores/overlayStore";
+// import {getImagePath} from "@/utils/getFilePath";
 
 // Setup
 const overlay = useOverlayStore();
@@ -31,6 +32,11 @@ const handleClick = () => {
   }
   longPressHook.value = false; // Reset for next interaction
 }
+//
+// const cover_url = ref<string | undefined>('assets/placeholder.jpg');
+// watch(() => props?.result, async () => {
+//   if(props.result) cover_url.value = await getImagePath(props?.result);
+// })
 
 onLongPress(
     htmlRefHook,
