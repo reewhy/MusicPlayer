@@ -2,7 +2,7 @@
 import { useDatabase } from "@/composables/useDatabase";
 import {onMounted, ref} from "vue";
 import PlaylistItem from "@/components/PlaylistItem.vue";
-import type { Playlist } from "@/types/common"; // adjust if needed
+import type {Album, Playlist} from "@/types/common"; // adjust if needed
 import { useOverlayStore } from "@/stores/overlayStore";
 import AlbumItem from "@/components/AlbumItem.vue";
 

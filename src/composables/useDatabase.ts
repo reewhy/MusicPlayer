@@ -707,7 +707,7 @@ function createDatabase() {
             album.label ?? null,
             album.trackCount ?? null,
             album.genreId ?? null,
-            album.images ? JSON.stringify(album.images) : null,
+            album.images ? JSON.stringify(album.images) : JSON.stringify({large: album.cover}),
             album.cover ?? null
         ]
 

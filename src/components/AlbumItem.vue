@@ -12,11 +12,14 @@ watch(() => props.result, async () => {
   cover_url.value = await getImagePath(props.result);
 
   console.log("Watched: ", JSON.stringify(props?.result, null, 2));
+
+  console.log("Cover url: ", cover_url.value);
 })
 
 onMounted( async () => {
   cover_url.value = await getImagePath(props.result);
   console.log("Watched: ", JSON.stringify(props?.result, null, 2));
+  console.log("Cover url: ", cover_url.value);
 })
 </script>
 
@@ -72,7 +75,7 @@ onMounted( async () => {
         <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
               class="w-full h-full object-cover group-hover:scale-110 group-active:scale-110 transition-transform duration-500"
-              :src="cover_url"
+              :src="cover_url || props.result?.cover || props.result?.images?.large"
               :alt="`${props.result?.title} album cover`"
               loading="lazy"
           />

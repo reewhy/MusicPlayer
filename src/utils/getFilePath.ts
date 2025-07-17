@@ -54,7 +54,28 @@ export async function getPlaylistImage(obj: Playlist, save: boolean = false): Pr
 }
 
 export async function getImagePath(obj: Song | Album | object): Promise<string> {
-    if(obj === null) return 'assets/placeholder.png';
+    if (!obj) return 'assets/placeholder.png';
+
+    // Helper function to safely get image URL
+    const getImageUrl = (imageProperty: any): string | null => {
+        if (!imageProperty) return null;
+
+        if (typeof imageProperty === 'string') {
+            return imageProperty;
+        }
+
+        if (typeof imageProperty === 'function') {
+            try {
+                const result = imageProperty();
+                return typeof result === 'string' ? result.replace(/<\/?small>/g, '') : null;
+            } catch (error) {
+                console.warn('Error calling image function:', error);
+                return null;
+            }
+        }
+
+        return null;
+    };
 
     try {
         if (Capacitor.isNativePlatform()) {
@@ -94,18 +115,22 @@ export async function getImagePath(obj: Song | Album | object): Promise<string> 
             return Capacitor.convertFileSrc(pathResult.uri);
         }
     } catch (err) {
-        // Fallback logic for both native and web platforms
-        if(obj.images){
-            return obj.images?.large || obj.images?.small || 'assets/placeholder.png';
-        } else {
-            return obj.albumCover || obj.cover || 'assets/placeholder.png';
-        }
+        // Continue to fallback logic
+        console.warn('Native platform image loading failed:', err);
     }
 
-    // Fallback for web platform (when not native)
-    if(obj.images){
-        return obj.images?.large || obj.images?.small || 'assets/placeholder.png';
-    } else {
-        return obj.albumCover || obj.cover || 'assets/placeholder.png';
+    // Fallback logic for both native and web platforms
+    if (obj.images) {
+        const large = getImageUrl(obj.images.large);
+        const small = getImageUrl(obj.images.small);
+        const fallback = getImageUrl(obj.images);
+
+        return large || small || fallback || 'assets/placeholder.png';
     }
+
+    // Check other possible image properties
+    const albumCover = getImageUrl(obj.albumCover);
+    const cover = getImageUrl(obj.cover);
+
+    return albumCover || cover || 'assets/placeholder.png';
 }
