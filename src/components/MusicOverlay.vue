@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import {ref, computed, onMounted, onUnmounted, watch} from 'vue';
 import { useMusicManager } from "@/composables/useMusicManager";
 import type { Song } from "@/types/common";
 import { OhVueIcon } from 'oh-vue-icons';
@@ -78,6 +78,12 @@ onUnmounted(() => {
     clearInterval(stateInterval);
   }
 });
+
+watch(currentSong, async () => {
+  getImagePath(currentSong as Song).then((val) => {
+    cover_url.value = val;
+  })
+})
 
 // Show/hide based on current song
 const showPlayer = computed(() => currentSong.value !== null);

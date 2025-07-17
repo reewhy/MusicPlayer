@@ -29,7 +29,7 @@ const props = defineProps({
 
 // Liked state
 const isLiked = ref(false)
-const cover_url = ref<string | undefined>('assets/placeholder.jpg');
+const cover_url = ref<string | undefined>('assets/placeholder.png');
 
 watch(() => overlay.isOpen, async () => {
   const trackExists = await checkIfTrackLiked(overlay.objData)

@@ -229,6 +229,8 @@ watch(currentSong, async (newSong) => {
       isLiked.value = val;
     });
     cover_url.value = await getImagePath(newSong);
+    console.log("Cover object: ", JSON.stringify(newSong, null, 2));
+    console.log("Cover url: ", cover_url.value);
   }
 });
 
