@@ -6,6 +6,7 @@ import { OhVueIcon } from 'oh-vue-icons';
 import {useOverlayStore} from "@/stores/overlayStore";
 import {useDatabase} from "@/composables/useDatabase";
 import {getImagePath} from "@/utils/getFilePath";
+import { formatDuration } from "@/utils/formatDuration";
 
 const {
   likeSong,
@@ -75,11 +76,11 @@ const progressPercentage = computed(() => {
 });
 
 const formattedCurrentTime = computed(() => {
-  return formatTime(currentTime.value);
+  return formatDuration(currentTime.value);
 });
 
 const formattedDuration = computed(() => {
-  return formatTime(duration.value);
+  return formatDuration(duration.value);
 });
 
 const cover_url = ref<string | undefined>('assets/placeholder.jpg');
@@ -105,14 +106,6 @@ const addToPlaylist = () => {
     overlay.openAdd();
   }
 }
-
-
-// Helper functions
-const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
 
 // Player controls
 const togglePlayPause = async () => {

@@ -8,6 +8,7 @@ import SongPlaylistItem from "@/components/SongPlaylistItem.vue";
 import { useDatabase } from "@/composables/useDatabase";
 import { useMusicManager } from "@/composables/useMusicManager";
 import {getImagePath} from "@/utils/getFilePath";
+import { formatDuration } from "@/utils/formatDuration";
 
 const musicManager = useMusicManager();
 
@@ -93,15 +94,6 @@ const toggleLike = async () => {
     isLiked.value ? await likeAlbum(album.value) : await unlikeAlbum(album.value)
     console.log('Like toggled:', isLiked.value)
   }
-}
-
-// Format duration from seconds to mm:ss
-// To-Do: put this function in utils
-const formatDuration = (seconds: number | undefined) => {
-  if (!seconds) return '';
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 // Calculate total album duration

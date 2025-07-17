@@ -25,7 +25,14 @@ const updateState = () => {
   currentSong.value = state.currentSong;
   isPlaying.value = state.isPlaying;
   isLoading.value = state.isLoading;
-  cover_url.value = getImagePath(state.currentSong as Song);
+
+  musicManager.getDuration().then((val) => {
+    duration.value = val;
+  })
+
+  getImagePath(state.currentSong as Song).then((val) => {
+    cover_url.value = val;
+  })
 };
 
 // Progress percentage
@@ -64,9 +71,6 @@ onMounted(() => {
   updateState();
   // Update state every second
   stateInterval = setInterval(updateState, 1000);
-
-  // Mock duration - you'll need to get this from your audio system
-  duration.value = currentSong.value?.duration || 180;
 });
 
 onUnmounted(() => {

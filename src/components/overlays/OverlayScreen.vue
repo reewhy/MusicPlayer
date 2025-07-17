@@ -71,7 +71,7 @@ const removeFromThePlaylist = async () => {
   overlay.closeOverlay()
 }
 
-// To implement
+
 const addToQueue = () => {
   console.log('Add to queue')
   musicManager.addToQueue(overlay.objData)
@@ -84,7 +84,7 @@ const goToArtist = () => {
   overlay.closeOverlay()
 }
 
-// To implement
+
 const goToAlbum = () => {
   console.log('Go to artist')
   router.push({name: 'album', params: {id: overlay.objData.albumId}});

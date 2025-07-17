@@ -6,6 +6,7 @@ import { useOverlayStore } from "@/stores/overlayStore";
 import { useMusicManager } from "@/composables/useMusicManager";
 import {getImagePath} from "@/utils/getFilePath";
 import {Song} from "@/types/common";
+import { formatDuration } from "@/utils/formatDuration";
 
 // Setups
 const overlay = useOverlayStore();
@@ -46,14 +47,6 @@ const download = async () => {
     isDownloading.value = false;
     downloadProgress.value = 0;
   }
-}
-
-// Format duration from seconds to mm:ss
-const formatDuration = (seconds: number | undefined) => {
-  if (!seconds) return '';
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 const htmlRefHook = useTemplateRef<HTMLElement>('htmlRefHook')

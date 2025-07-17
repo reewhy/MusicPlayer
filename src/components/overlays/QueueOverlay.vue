@@ -7,6 +7,7 @@ import type { Song } from "@/types/common";
 import { OhVueIcon } from 'oh-vue-icons';
 import { Haptics } from "@capacitor/haptics";
 import {getImagePath} from "@/utils/getFilePath";
+import { formatDuration } from "@/utils/formatDuration";
 
 const overlay = useOverlayStore();
 const musicManager = useMusicManager();
@@ -93,14 +94,6 @@ const repeatIcon = computed(() => {
 const repeatColor = computed(() => {
   return repeat.value !== 'none' ? 'text-purple-400' : 'text-slate-400';
 });
-
-// Helper functions
-const formatDuration = (seconds: number | undefined) => {
-  if (!seconds) return '0:00';
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
 
 const isCurrentSong = (index: number) => {
   return index === currentIndex.value;

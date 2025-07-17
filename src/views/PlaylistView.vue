@@ -3,13 +3,13 @@ import { useRoute } from 'vue-router';
 import { useDabManager } from "@/composables/useDabManager";
 import {onMounted, ref, watch, computed, useTemplateRef, shallowRef} from "vue";
 import {Playlist} from "@/types/common";
-import SongItem from "@/components/SongItem.vue";
 import {ProgressStatus} from "@capacitor/filesystem";
 import { useDatabase } from "@/composables/useDatabase";
 import { useOverlayStore } from "@/stores/overlayStore";
 import {onLongPress} from "@vueuse/core";
 import { useMusicManager } from "@/composables/useMusicManager";
 import SongPlaylistItem from "@/components/SongPlaylistItem.vue";
+import { formatDuration } from "@/utils/formatDuration";
 
 const musicManager = useMusicManager();
 const overlay = useOverlayStore();
@@ -75,14 +75,6 @@ const playPlaylist = async () => {
 
 const fetchPlaylistData = async (playlistId: number) => {
   playlist.value = await fetchPlaylist(playlistId);
-}
-
-// Format duration from seconds to mm:ss
-const formatDuration = (seconds: number | undefined) => {
-  if (!seconds) return '';
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 // Calculate total album duration
