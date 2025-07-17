@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {Playlist} from "@/types/common";
 import { useRouter } from 'vue-router';
-import {shallowRef, useTemplateRef} from "vue";
+import {onMounted, ref, shallowRef, useTemplateRef, watch} from "vue";
 import {onLongPress} from "@vueuse/core";
 import { useOverlayStore } from "@/stores/overlayStore";
+import {getPlaylistImage} from "@/utils/getFilePath";
 // import {getImagePath} from "@/utils/getFilePath";
 
 // Setup
@@ -32,11 +33,11 @@ const handleClick = () => {
   }
   longPressHook.value = false; // Reset for next interaction
 }
-//
-// const cover_url = ref<string | undefined>('assets/placeholder.jpg');
-// watch(() => props?.result, async () => {
-//   if(props.result) cover_url.value = await getImagePath(props?.result);
-// })
+
+const cover_url = ref<string | undefined>('assets/placeholder.jpg');
+onMounted(async () => {
+  cover_url.value = await getPlaylistImage(props?.result);
+})
 
 onLongPress(
     htmlRefHook,
@@ -70,7 +71,7 @@ onLongPress(
         <div class="aspect-square rounded-xl overflow-hidden bg-slate-700/50 group-hover:shadow-lg group-hover:shadow-indigo-500/20 group-active:shadow-lg group-active:shadow-indigo-500/20 transition-shadow duration-300">
           <img
               class="w-full h-full object-cover group-hover:scale-110 group-active:scale-110 transition-transform duration-500"
-              :src="result.image || 'assets/placeholder.png'"
+              :src="cover_url || 'assets/placeholder.png'"
               :alt="`${result.name} album cover`"
               loading="lazy"
           />

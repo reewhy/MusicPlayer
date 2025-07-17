@@ -90,6 +90,7 @@ const fetchAlbumData = async (albumId: string) => {
 // Functions
 const toggleLike = async () => {
   if(album.value !== undefined){
+    console.log("Liked album: ", JSON.stringify(album.value, null, 2))
     isLiked.value = !isLiked.value
     isLiked.value ? await likeAlbum(album.value) : await unlikeAlbum(album.value)
     console.log('Like toggled:', isLiked.value)

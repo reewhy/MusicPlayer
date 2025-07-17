@@ -4,13 +4,19 @@ import {getImagePath} from "@/utils/getFilePath";
 import {Album, Song} from "@/types/common";
 
 const props = defineProps({
-  result: Object
+  result: Object,
+  compact: Boolean
 })
 const cover_url = ref<string | undefined>('assets/placeholder.png');
 watch(() => props.result, async () => {
   cover_url.value = await getImagePath(props.result);
 
-  console.log("Watched: ", JSON.stringify(props?.result));
+  console.log("Watched: ", JSON.stringify(props?.result, null, 2));
+})
+
+onMounted( async () => {
+  cover_url.value = await getImagePath(props.result);
+  console.log("Watched: ", JSON.stringify(props?.result, null, 2));
 })
 </script>
 
@@ -36,7 +42,7 @@ watch(() => props.result, async () => {
         <p class="text-sm text-slate-400 group-hover:text-slate-300 group-active:text-slate-300 transition-colors duration-300">
           {{ props.result?.artist }}
         </p>
-        <div class="flex items-center gap-2 text-xs text-slate-500">
+        <div class="flex items-center gap-2 text-xs text-slate-500" v-if="!props.compact">
           <v-icon name="md-album" scale="0.9" class="text-slate-500"></v-icon>
           <span>{{ props.result?.trackCount }} tracks</span>
         </div>
@@ -48,14 +54,14 @@ watch(() => props.result, async () => {
         </div>
 
         <!-- Genre badge -->
-        <div v-if="props.result?.genre" class="inline-flex">
+        <div v-if="props.result?.genre && !props.compact" class="inline-flex">
           <span class="px-2 py-1 rounded-full bg-indigo-600/20 text-indigo-300 text-xs font-medium">
             {{ props.result.genre }}
           </span>
         </div>
 
         <!-- Audio quality indicator -->
-        <div v-if="props.result?.audioQuality?.isHiRes" class="flex items-center gap-1 text-xs text-purple-400">
+        <div v-if="props.result?.audioQuality?.isHiRes && !props.compact" class="flex items-center gap-1 text-xs text-purple-400">
           <v-icon name="md-highquality" scale="0.9"></v-icon>
           <span>Hi-Res</span>
         </div>

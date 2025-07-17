@@ -167,22 +167,23 @@ function createDatabase() {
     }
 
     // Create a playlist
-    const createPlaylist = async (name: string): Promise<boolean> => {
+    const createPlaylist = async (name: string): Promise<number | false> => {
         if(!db.value) return false;
 
         const statement = `
             INSERT INTO playlists(name) VALUES(?);
         `;
-
         const values = [
             name
-        ]
+        ];
 
         try {
-            await db.value.run(statement, values)
-            return true
+            const result = await db.value.run(statement, values);
+            // Return the ID of the newly created playlist
+            return result.changes?.lastId || false;
         } catch (error) {
-            return false
+            console.error('Error creating playlist:', error);
+            return false;
         }
     }
 
@@ -197,6 +198,28 @@ function createDatabase() {
 
         const values = [
             name,
+            id
+        ]
+
+        try {
+            await db.value.run(statement, values)
+            return true
+        } catch (error) {
+            return false
+        }
+    }
+
+    // Update a playlist cover url
+    const updatePlaylistCoverUrl = async (id: number, url: string): Promise<boolean> => {
+        if(!db.value) return false;
+        if(id === null || url === null) return false;
+
+        const statement = `
+            UPDATE playlists SET image=? WHERE id=?;
+        `;
+
+        const values = [
+            url,
             id
         ]
 
@@ -685,6 +708,7 @@ function createDatabase() {
             album.trackCount ?? null,
             album.genreId ?? null,
             album.images ? JSON.stringify(album.images) : null,
+            album.cover ?? null
         ]
 
         try {
@@ -720,7 +744,8 @@ function createDatabase() {
         likeAlbum,
         unlikeAlbum,
         getAllAlbums,
-        fetchAlbumTracks
+        fetchAlbumTracks,
+        updatePlaylistCoverUrl
     }
 }
 

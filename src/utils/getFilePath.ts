@@ -1,6 +1,6 @@
 import {Capacitor} from "@capacitor/core";
 import {Directory, Filesystem} from "@capacitor/filesystem";
-import {Album, Song} from "@/types/common";
+import {Album, Playlist, Song} from "@/types/common";
 
 const DEFAULT_DIRECTORY = Directory.Documents;
 
@@ -31,6 +31,25 @@ export async function returnImagePath(obj: Song | Album){
         return pathResult.uri;
     } catch(error){
         return null;
+    }
+}
+
+
+export async function getPlaylistImage(obj: Playlist, save: boolean = false): Promise<string | undefined>{
+    try{
+        console.log("Checking playlist: ", JSON.stringify(obj, null, 2));
+        const pathResult = await Filesystem.getUri({
+            path: `playlists/${obj.id}.jpg`,
+            directory: DEFAULT_DIRECTORY
+        });
+        if(save){
+            return pathResult.uri;
+        } else {
+            return Capacitor.convertFileSrc(pathResult.uri);
+        }
+    } catch(error){
+        console.log("Error while getting playlist image: ", error);
+        return undefined;
     }
 }
 

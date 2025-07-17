@@ -42,7 +42,9 @@ import {
   MdSkipnextRound,
   MdRepeatone,
   MdRepeat,
-  MdVolumeoff, MdVolumeup, MdList, MdVolumedown, MdDragindicator, IoEllipsisVerticalSharp, MdClearall
+  MdVolumeoff, MdVolumeup, MdList, MdVolumedown, MdDragindicator, IoEllipsisVerticalSharp, MdClearall,
+  MdSearch,
+  MdMusicnote, MdClose
 } from "oh-vue-icons/icons";
 
 addIcons(
@@ -84,7 +86,10 @@ addIcons(
     MdVolumedown,
     MdDragindicator,
     IoEllipsisVerticalSharp,
-    MdClearall
+    MdClearall,
+    MdSearch,
+    MdMusicnote,
+    MdClose
 );
 
 import './main.css'

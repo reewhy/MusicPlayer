@@ -10,6 +10,7 @@ import {onLongPress} from "@vueuse/core";
 import { useMusicManager } from "@/composables/useMusicManager";
 import SongPlaylistItem from "@/components/SongPlaylistItem.vue";
 import { formatDuration } from "@/utils/formatDuration";
+import {getPlaylistImage} from "@/utils/getFilePath";
 
 const musicManager = useMusicManager();
 const overlay = useOverlayStore();
@@ -111,6 +112,12 @@ onLongPress(
       }
     }
 )
+
+
+const cover_url = ref<string | undefined>('assets/placeholder.png');
+watch(playlist, async () => {
+  if(playlist.value !== null && playlist.value !== undefined) cover_url.value = await getPlaylistImage(playlist.value);
+})
 </script>
 
 <template>
@@ -134,7 +141,7 @@ onLongPress(
           <div class="aspect-square rounded-2xl overflow-hidden bg-slate-700/50 shadow-2xl shadow-black/50">
             <img
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                :src="playlist?.image || 'assets/placeholder.png'"
+                :src="cover_url || 'assets/placeholder.png'"
                 :alt="`${playlist?.name} album cover`"
                 loading="lazy"
             />

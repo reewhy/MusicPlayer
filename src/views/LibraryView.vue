@@ -62,16 +62,17 @@ onMounted(async () => {
               class="transform hover:scale-105 transition-transform duration-200"
           />
         </div>
-        <h1 class="text-2xl font-bold text-white mb-4 text-center">
+        <h1 class="text-2xl font-bold text-white mb-4 text-center mt-6">
           <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
             Albums
           </span>
         </h1>
-        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <AlbumItem
               v-for="album in albums"
               :key="album.id"
               :result="album"
+              :compact="true"
               class="transform hover:scale-105 transition-transform duration-200"
           />
         </div>

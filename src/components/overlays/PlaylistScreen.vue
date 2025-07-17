@@ -3,6 +3,8 @@ import { useOverlayStore } from "@/stores/overlayStore";
 import { useConfirm } from "@/composables/useConfirm";
 import { useDatabase } from "@/composables/useDatabase";
 import { reloadPage } from '@/utils/reloadPage';
+import {onMounted, ref, watch} from "vue";
+import {getPlaylistImage} from "@/utils/getFilePath";
 
 // Setups
 const {
@@ -44,6 +46,13 @@ const deleteOpenPlaylist = async () => {
     reloadPage();
   }
 }
+
+
+const cover_url = ref<string | undefined>('assets/placeholder.png');
+watch(() => overlay.editingPlaylist, async () => {
+  if(overlay.editingPlaylist !== null && overlay.editingPlaylist !== undefined) cover_url.value = await getPlaylistImage(overlay.editingPlaylist);
+})
+
 </script>
 
 <template>
@@ -70,7 +79,7 @@ const deleteOpenPlaylist = async () => {
               <!-- Album artwork -->
               <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-700/50 shadow-md flex-shrink-0">
                 <img
-                    :src="overlay.editingPlaylist?.image || '/assets/placeholder.png'"
+                    :src="cover_url || '/assets/placeholder.png'"
                     :alt="`${overlay.editingPlaylist?.name} playlist image`"
                     class="w-full h-full object-cover"
                     loading="lazy"
