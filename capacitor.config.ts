@@ -4,9 +4,9 @@ const config: CapacitorConfig = {
   appId: 'it.reewhy.goonplayer',
   appName: 'GoonPlayer',
   webDir: 'dist',
-  "server": {
-    "url": "http://192.168.1.104:8100",
-    "cleartext": true
+  server: {
+    url: "http://192.168.1.104:8100",
+    cleartext: true
   },
   plugins: {
     CapacitorHttp: {

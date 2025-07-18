@@ -83,11 +83,12 @@ const formattedDuration = computed(() => {
   return formatDuration(duration.value);
 });
 
-const cover_url = ref<string | undefined>('assets/placeholder.jpg');
+const resolvedImagePath = ref<string>('assets/placeholder.png');
 
-const songImage = computed(() => {
+const songImage = computed( () => {
   return currentSong.value?.images?.large ||
       currentSong.value?.images?.small ||
+      resolvedImagePath.value ||
       '/assets/placeholder.png';
 });
 
@@ -215,6 +216,24 @@ onUnmounted(() => {
 // Watch for song changes
 watch(currentSong, async (newSong) => {
   if (newSong) {
+    resolvedImagePath.value = 'assets/placeholder.png';
+
+    const immediateImage = newSong.images?.large ||
+        newSong.images?.small ||
+        '/assets/placeholder.png';
+
+    resolvedImagePath.value = immediateImage;
+
+    // Then try to get the resolved image path asynchronously
+    try {
+      const resolvedPath = await getImagePath(newSong);
+      if (resolvedPath && resolvedPath !== '/assets/placeholder.png') {
+        resolvedImagePath.value = resolvedPath;
+      }
+    } catch (error) {
+      console.warn('Error resolving image path:', error);
+      // Keep the immediate image or placeholder
+    }
     // Get real duration from the audio player
     try {
       const realDuration = await musicManager.getDuration();
@@ -228,11 +247,8 @@ watch(currentSong, async (newSong) => {
       console.log('Track is liked:', val);
       isLiked.value = val;
     });
-    cover_url.value = await getImagePath(newSong);
-    console.log("Cover object: ", JSON.stringify(newSong, null, 2));
-    console.log("Cover url: ", cover_url.value);
   }
-});
+}, { immediate: true });
 
 // Watch for volume changes to update mute state
 watch(volume, async (newVolume) => {
@@ -288,7 +304,7 @@ watch(volume, async (newVolume) => {
       <div class="flex justify-center px-8 mb-16">
         <div class="relative w-80 h-80 max-w-[80vw] max-h-[80vw]">
           <img
-              :src="cover_url || songImage"
+              :src="songImage"
               :alt="currentSong.title || 'Album cover'"
               class="w-full h-full rounded-lg shadow-2xl object-cover"
           />

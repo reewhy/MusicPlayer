@@ -18,21 +18,27 @@ const isPlaying = ref(false);
 const isLoading = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
+const resolvedImagePath = ref<string>('/assets/placeholder.png');
+const imageLoading = ref(false);
 
 // Update state periodically
-const updateState = () => {
+const updateState = async () => {
   const state = musicManager.getState();
   currentSong.value = state.currentSong;
   isPlaying.value = state.isPlaying;
   isLoading.value = state.isLoading;
 
-  musicManager.getDuration().then((val) => {
-    duration.value = val;
-  })
+  try {
+    const realDuration = await musicManager.getDuration();
+    if (realDuration > 0) {
+      duration.value = realDuration;
+    }
 
-  getImagePath(state.currentSong as Song).then((val) => {
-    cover_url.value = val;
-  })
+    const realCurrentTime = await musicManager.getCurrentTime();
+    currentTime.value = realCurrentTime;
+  } catch (error) {
+    console.error('Error updating player state:', error);
+  }
 };
 
 // Progress percentage
@@ -41,11 +47,11 @@ const progressPercentage = computed(() => {
   return (currentTime.value / duration.value) * 100;
 });
 
-const cover_url = ref<string | undefined>('assets/placeholder.jpg');
-// Song image with fallback
+// Song image with proper async handling
 const songImage = computed(() => {
   return currentSong.value?.images?.large ||
       currentSong.value?.images?.small ||
+      resolvedImagePath.value ||
       '/assets/placeholder.png';
 });
 
@@ -56,19 +62,71 @@ const togglePlayPause = async () => {
   } else {
     await musicManager.resumeSong();
   }
-  updateState();
+  await updateState();
 };
 
 const playNext = async () => {
   await musicManager.playNext();
-  updateState();
+  await updateState();
+};
+
+// Handle image loading when song changes
+const loadSongImage = async (song: Song | null) => {
+  if (!song) {
+    resolvedImagePath.value = '/assets/placeholder.png';
+    return;
+  }
+
+  // Check for immediate images first
+  const immediateImage = song.images?.large ||
+      song.images?.small;
+
+  if (immediateImage) {
+    // Set immediate image right away
+    resolvedImagePath.value = immediateImage;
+
+    // Still try to get better image asynchronously, but don't show loading
+    try {
+      const resolvedPath = await getImagePath(song);
+
+      if (resolvedPath && resolvedPath !== '/assets/placeholder.png' && resolvedPath !== immediateImage) {
+        resolvedImagePath.value = resolvedPath;
+      }
+    } catch (error) {
+      console.warn('Error resolving image path:', error);
+      // Keep the immediate image
+    }
+  } else {
+    // No immediate image available, show loading and try async
+    imageLoading.value = true;
+    resolvedImagePath.value = '/assets/placeholder.png';
+
+    try {
+      const resolvedPath = await getImagePath(song);
+
+      if (resolvedPath && resolvedPath !== '/assets/placeholder.png') {
+        resolvedImagePath.value = resolvedPath;
+      }
+    } catch (error) {
+      console.warn('Error resolving image path:', error);
+      // Keep placeholder
+    } finally {
+      imageLoading.value = false;
+    }
+  }
 };
 
 // Initialize and cleanup
 let stateInterval: NodeJS.Timeout;
 
-onMounted(() => {
-  updateState();
+onMounted(async () => {
+  await updateState();
+
+  // Load initial image if there's a current song
+  if (currentSong.value) {
+    await loadSongImage(currentSong.value);
+  }
+
   // Update state every second
   stateInterval = setInterval(updateState, 1000);
 });
@@ -79,18 +137,16 @@ onUnmounted(() => {
   }
 });
 
-watch(currentSong, async () => {
-  getImagePath(currentSong as Song).then((val) => {
-    cover_url.value = val;
-  })
-})
+// Watch for song changes and update image
+watch(currentSong, async (newSong) => {
+  await loadSongImage(newSong);
+}, { immediate: true });
 
 // Show/hide based on current song
 const showPlayer = computed(() => currentSong.value !== null);
 
-// Expand to full player (for future implementation)
+// Expand to full player
 const expandPlayer = () => {
-  // You can implement a full-screen player here
   console.log('Expand player');
   openMusic();
 };
@@ -124,14 +180,25 @@ const expandPlayer = () => {
         <div class="flex items-center space-x-3 flex-1 min-w-0">
           <div class="relative">
             <img
-                :src="cover_url || songImage"
+                :src="songImage"
                 :alt="currentSong?.title || 'Album cover'"
                 class="w-10 h-10 rounded-md object-cover"
+                :class="{ 'opacity-75': imageLoading }"
             />
+
+            <!-- Loading overlay for main player loading -->
             <div v-if="isLoading" class="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center">
               <OhVueIcon
                   name="md-refresh"
                   class="w-4 h-4 text-white animate-spin"
+              />
+            </div>
+
+            <!-- Small loading indicator for image loading -->
+            <div v-else-if="imageLoading" class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+              <OhVueIcon
+                  name="md-refresh"
+                  class="w-2 h-2 text-white animate-spin"
               />
             </div>
           </div>

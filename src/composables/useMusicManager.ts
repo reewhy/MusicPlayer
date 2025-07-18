@@ -52,7 +52,7 @@ function createMusicManager() {
                     friendlyTitle: song.title || 'Unknown Title',
                     artistName: song.artist || 'Unknown Artist',
                     albumTitle: song.albumTitle || 'Unknown Album',
-                    artworkSource: song.images?.large || undefined,
+                    artworkSource: await getImagePath(song) || song.images?.large || undefined,
                     useForNotification: true,
                     isBackgroundMusic: false,
                     loop: false,
